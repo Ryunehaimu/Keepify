@@ -1,6 +1,8 @@
 # Ketergantungan (Dependencies)
 # Abaikan folder node_modules karena bisa di-generate ulang dari package.json dan package-lock.json
 node_modules/
+# Next.js build output
+.next/
 
 # File Log
 # Abaikan file log yang biasanya dibuat saat runtime atau debugging
