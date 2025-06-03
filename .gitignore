@@ -1,0 +1,61 @@
+# Ketergantungan (Dependencies)
+# Abaikan folder node_modules karena bisa di-generate ulang dari package.json dan package-lock.json
+node_modules/
+
+# File Log
+# Abaikan file log yang biasanya dibuat saat runtime atau debugging
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+lerna-debug.log*
+.pnpm-debug.log*
+
+# Direktori hasil build atau kompilasi
+# Folder ini biasanya berisi output dari proses build (misalnya, file JavaScript yang sudah di-transpile atau di-bundle)
+dist/
+build/
+out/
+public/ # Jika folder public Anda berisi hasil build, jika tidak dan berisi aset statis, jangan abaikan
+.next/ # Untuk Next.js
+.nuxt/ # Untuk Nuxt.js
+.svelte-kit/ # Untuk SvelteKit
+
+# File konfigurasi lingkungan (Environment variables)
+# File .env biasanya berisi kredensial sensitif atau konfigurasi spesifik untuk lingkungan tertentu
+# Sebaiknya buat file .env.example yang di-commit, dan .env asli diabaikan
+.env
+.env*.local
+.env.development.local
+.env.test.local
+.env.production.local
+!.env.example
+!.env.sample
+
+# File sementara dan cache
+# Abaikan file-file sementara atau cache yang dibuat oleh berbagai tools
+.npm
+.eslintcache
+.stylelintcache
+.cache
+coverage/
+.nyc_output/
+
+# File spesifik sistem operasi (OS generated files)
+.DS_Store
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+
+# File spesifik IDE/Editor
+.idea/ # Untuk IntelliJ IDEA, WebStorm, PhpStorm, dll.
+.vscode/ # Untuk Visual Studio Code (kecuali file yang memang ingin di-share seperti .vscode/settings.json jika disepakati tim)
+*.swp # Vim swap files
+*~ # Backup files editor
+
+# File lain-lain
+# Tambahkan file atau folder lain yang spesifik untuk proyek Anda dan tidak perlu di-commit
+# contoh:
+# my-secret-file.txt
+# temporary_data/
