@@ -1,167 +1,248 @@
 // src/app/dashboard/page.tsx
 'use client';
 
-import React, { useState, useEffect } from 'react';
-import { useAuth } from '@/contexts/AuthContext'; // Pastikan path ini benar
+import { useAuth } from '@/contexts/AuthContext';
 import { useRouter } from 'next/navigation';
+import React, { useEffect, useState } from 'react';
+import { Loader2, Package, PlusCircle, Archive, CheckCircle, TrendingUp } from 'lucide-react';
 import Link from 'next/link';
-import { Menu, X } from 'lucide-react'; // Ikon untuk tombol toggle
+import { apiClient } from '@/lib/api';
 
-export default function DashboardPage() {
-  const { isAuthenticated, isLoading, user, logoutAction } = useAuth();
+// Enhanced interface for dashboard summary
+interface DashboardSummary {
+  totalOrders: number;
+  totalItems: number;
+  ordersByStatus: {
+    PENDING_PICKUP: number;
+    PICKED_UP: number;
+    STORED: number;
+    PENDING_DELIVERY: number;
+    DELIVERED: number;
+  };
+}
+
+export default function DashboardHomePage() {
+  const { user, isAuthenticated, isLoading: authIsLoading } = useAuth();
   const router = useRouter();
-  const [isSidebarOpen, setIsSidebarOpen] = useState(true); // Default sidebar terbuka di desktop, tertutup di mobile (diatur via CSS)
+  const [summary, setSummary] = useState<DashboardSummary | null>(null);
+  const [isLoadingSummary, setIsLoadingSummary] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    if (!isLoading && !isAuthenticated) {
-      router.push('/login');
+    if (!authIsLoading && !isAuthenticated) {
+      router.push('/login?message=Silakan login untuk mengakses dashboard');
     }
-  }, [isAuthenticated, isLoading, router]);
+  }, [authIsLoading, isAuthenticated, router]);
 
-  // Efek untuk mengunci scroll body saat sidebar mobile terbuka
   useEffect(() => {
-    if (isSidebarOpen && window.innerWidth < 768) { // md breakpoint Tailwind
-      document.body.style.overflow = 'hidden';
-    } else {
-      document.body.style.overflow = 'auto';
+    if (isAuthenticated) {
+      setIsLoadingSummary(true);
+      setError(null);
+      
+      apiClient.getMyDashboardSummary()
+        .then(response => {
+          // Handle both direct data and wrapped response
+          const data = response.data || response;
+          setSummary(data);
+        })
+        .catch(err => {
+          console.error("Gagal memuat summary dashboard:", err);
+          setError('Gagal memuat data dashboard');
+        })
+        .finally(() => {
+          setIsLoadingSummary(false);
+        });
     }
-    return () => { // Cleanup function
-      document.body.style.overflow = 'auto';
-    };
-  }, [isSidebarOpen]);
+  }, [isAuthenticated]);
 
-
-  if (isLoading) {
-    return <div className="min-h-screen flex items-center justify-center bg-slate-900 text-white">Memuat data pengguna...</div>;
+  if (authIsLoading || (!isAuthenticated && !authIsLoading && typeof window !== 'undefined')) {
+    return (
+      <div className="flex h-screen w-full items-center justify-center">
+        <Loader2 size={48} className="animate-spin text-sky-500" />
+      </div>
+    );
   }
-
-  if (!isAuthenticated) {
-    return null;
-  }
-
-  const sidebarNavLinks = user?.role === 'admin' 
-   ? [
-        { name: 'Dashboard', href: '/dashboard', icon: null /* <LayoutDashboard size={20}/> */ },
-        { name: 'Permintaan Pickup', href: '/dashboard/pickups', icon: null /* <Package size={20}/> */ },
-        { name: 'Jadwal Monitoring', href: '/dashboard/monitoring', icon: null },
-        { name: 'Manajemen User', href: '/dashboard/users', icon: null /* <Settings size={20}/> */ },
-      ]
-    : [
-        { name: 'Dashboard', href: '/dashboard', icon: null /* <LayoutDashboard size={20}/> */ },
-        { name: 'Barang Saya', href: '/dashboard/my-items', icon: null /* <Package size={20}/> */ },
-        { name: 'Titipkan Barang', href: '/dashboard/new-item', icon: null },
-        { name: 'Pengaturan Akun', href: '/dashboard/settings', icon: null /* <Settings size={20}/> */ },
-      ];
 
   return (
-    <div className="min-h-screen flex bg-slate-900 text-white relative md:static">
-      {/* Overlay untuk mobile saat sidebar terbuka */}
-      {isSidebarOpen && (
-        <div
-          className="fixed inset-0 z-20 bg-black/60 md:hidden"
-          onClick={() => setIsSidebarOpen(false)}
-          aria-hidden="true"
-        ></div>
+    <div className="text-white space-y-6 sm:space-y-8">
+      {/* Welcome Section */}
+      <div className="text-center sm:text-left">
+        <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-sky-400 mb-2">
+          Selamat Datang, {user?.firstName || 'Pengguna'}!
+        </h1>
+        <p className="text-base sm:text-lg text-slate-300">
+          Kelola semua barang titipan Anda dengan mudah melalui Keepify.
+        </p>
+      </div>
+
+      {/* Error State */}
+      {error && (
+        <div className="bg-red-800/30 border border-red-700 text-red-300 px-4 py-3 rounded-lg">
+          <p>{error}</p>
+          <button 
+            onClick={() => window.location.reload()} 
+            className="text-red-200 underline text-sm mt-1"
+          >
+            Coba lagi
+          </button>
+        </div>
       )}
 
-      {/* Sidebar */}
-      <aside
-        className={`
-          fixed inset-y-0 left-0 z-30 flex flex-col space-y-6
-          bg-slate-800 p-5 border-r border-slate-700
-          transform ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full'} 
-          md:translate-x-0 md:static 
-          transition-all duration-300 ease-in-out
-          ${isSidebarOpen ? 'w-64 md:w-64' : 'w-64 md:w-0 md:p-0 md:border-none'}
-          overflow-y-auto scrollbar-thin scrollbar-thumb-slate-700 scrollbar-track-slate-800
-        `}
-      >
-        {/* Konten sidebar hanya ditampilkan jika sidebar terbuka atau di mode desktop dan terbuka */}
-        <div className={`h-full flex flex-col ${(!isSidebarOpen && 'md:hidden')}`}>
-          <div className="flex items-center justify-between">
-            <h2 className="text-3xl font-bold text-sky-400">Keepify</h2>
-            {/* Tombol close untuk mobile, terlihat jika sidebar terbuka */}
-            <button
-              onClick={() => setIsSidebarOpen(false)}
-              className="md:hidden p-1 rounded-md text-slate-300 hover:bg-slate-700"
-              aria-label="Tutup sidebar"
-            >
-              <X size={24} />
-            </button>
+      {/* Summary Cards */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
+        {/* Total Orders */}
+        <div className="bg-slate-800 p-4 sm:p-6 rounded-xl shadow-lg hover:shadow-sky-500/20 transition-shadow">
+          <div className="flex items-center text-purple-400 mb-3">
+            <TrendingUp size={24} className="mr-3 flex-shrink-0" />
+            <h3 className="text-sm sm:text-lg font-semibold">Total Order</h3>
           </div>
-          {user && (
-            <p className="text-sm text-slate-400 truncate mt-1">
-              {user.firstName} ({user.role})
+          {isLoadingSummary ? (
+            <div className="flex items-center">
+              <Loader2 size={20} className="animate-spin text-slate-400 mr-2" />
+              <span className="text-slate-400 text-sm">Loading...</span>
+            </div>
+          ) : (
+            <p className="text-3xl sm:text-4xl font-bold text-white">
+              {summary?.totalOrders ?? 0}
             </p>
           )}
-          
-          <nav className="flex-grow mt-6">
-            <ul className="space-y-2">
-              {sidebarNavLinks.map((link) => (
-                <li key={link.name}>
-                  <Link 
-                    href={link.href} 
-                    className="flex items-center space-x-3 px-3 py-2.5 rounded-lg text-slate-300 hover:bg-sky-500/10 hover:text-sky-300 transition-colors duration-150 ease-in-out"
-                  >
-                    <span>{link.name}</span>
-                  </Link>
-                </li>
-              ))}
-            </ul>
-          </nav>
-
-          <div className="pt-4 mt-auto border-t border-slate-700">
-            <button
-              onClick={logoutAction}
-              className="w-full flex items-center justify-center space-x-3 px-3 py-2.5 bg-red-500/80 hover:bg-red-600 rounded-lg text-white font-medium transition-colors duration-150 ease-in-out"
-            >
-              <span>Logout</span>
-            </button>
-          </div>
+          <p className="text-xs sm:text-sm text-slate-500 mt-1">
+            Jumlah order penitipan Anda.
+          </p>
         </div>
-      </aside>
 
-      {/* Main Content Area */}
-      <main className="flex-1 flex flex-col overflow-x-hidden"> {/* Tambahkan flex-col dan overflow-x-hidden */}
-        {/* Header untuk Main Content termasuk Tombol Toggle */}
-        <header className="sticky top-0 z-10 bg-slate-800/80 backdrop-blur-md shadow-sm p-4 sm:p-5 flex items-center w-full">
-          <button
-            onClick={() => setIsSidebarOpen(!isSidebarOpen)}
-            className="p-2 rounded-md text-slate-300 hover:bg-slate-700 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-sky-500"
-            aria-label="Toggle sidebar"
+        {/* Total Items */}
+        <div className="bg-slate-800 p-4 sm:p-6 rounded-xl shadow-lg hover:shadow-sky-500/20 transition-shadow">
+          <div className="flex items-center text-sky-400 mb-3">
+            <Archive size={24} className="mr-3 flex-shrink-0" />
+            <h3 className="text-sm sm:text-lg font-semibold">Total Barang</h3>
+          </div>
+          {isLoadingSummary ? (
+            <div className="flex items-center">
+              <Loader2 size={20} className="animate-spin text-slate-400 mr-2" />
+              <span className="text-slate-400 text-sm">Loading...</span>
+            </div>
+          ) : (
+            <p className="text-3xl sm:text-4xl font-bold text-white">
+              {summary?.totalItems ?? 0}
+            </p>
+          )}
+          <p className="text-xs sm:text-sm text-slate-500 mt-1">
+            Jumlah semua barang Anda.
+          </p>
+        </div>
+
+        {/* Stored Items */}
+        <div className="bg-slate-800 p-4 sm:p-6 rounded-xl shadow-lg hover:shadow-sky-500/20 transition-shadow">
+          <div className="flex items-center text-green-400 mb-3">
+            <CheckCircle size={24} className="mr-3 flex-shrink-0" />
+            <h3 className="text-sm sm:text-lg font-semibold">Aman Tersimpan</h3>
+          </div>
+          {isLoadingSummary ? (
+            <div className="flex items-center">
+              <Loader2 size={20} className="animate-spin text-slate-400 mr-2" />
+              <span className="text-slate-400 text-sm">Loading...</span>
+            </div>
+          ) : (
+            <p className="text-3xl sm:text-4xl font-bold text-white">
+              {summary?.ordersByStatus?.STORED ?? 0}
+            </p>
+          )}
+          <p className="text-xs sm:text-sm text-slate-500 mt-1">
+            Order dengan status "STORED".
+          </p>
+        </div>
+      </div>
+
+      {/* Quick Actions */}
+      <div className="space-y-4">
+        <h2 className="text-xl sm:text-2xl font-semibold text-slate-200">
+          Aksi Cepat
+        </h2>
+        
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
+          <Link 
+            href="/dashboard/my-items" 
+            className="block p-4 sm:p-6 bg-slate-800 rounded-xl shadow-lg hover:bg-slate-700/70 transition-colors group"
           >
-            {/* Ikon berubah tergantung state sidebar, atau selalu menu jika X ada di dalam sidebar */}
-            <Menu size={24} /> 
-          </button>
-          <h1 className="ml-4 text-xl sm:text-2xl font-bold text-sky-400 truncate">
-            Ringkasan {user?.role === 'admin' ? 'Admin' : 'Pengguna'}
-          </h1>
-        </header>
-
-        {/* Konten Dashboard aktual */}
-        <div className="flex-grow p-6 sm:p-8 overflow-y-auto">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {/* Kartu Statistik dan Bagan Placeholder */}
-            <div className="bg-slate-800 p-6 rounded-xl shadow-lg">
-              <h3 className="text-lg font-semibold text-slate-200 mb-1">Total Barang Dititipkan</h3>
-              <p className="text-3xl font-bold text-sky-400">15</p>
-              <p className="text-xs text-slate-400 mt-1">+2 minggu ini</p>
-            </div>
-            <div className="bg-slate-800 p-6 rounded-xl shadow-lg">
-              <h3 className="text-lg font-semibold text-slate-200 mb-1">Monitoring Berikutnya</h3>
-              <p className="text-3xl font-bold text-sky-400">3 Hari Lagi</p>
-              <p className="text-xs text-slate-400 mt-1">Item "Dokumen Rahasia"</p>
-            </div>
-            <div className="bg-slate-800 p-6 rounded-xl shadow-lg md:col-span-2 lg:col-span-1">
-              <h3 className="text-lg font-semibold text-slate-200 mb-3">Pertumbuhan Penitipan</h3>
-              <div className="h-72 bg-slate-700/50 rounded-lg flex items-center justify-center">
-                <p className="text-slate-500">[Placeholder Bagan Pertumbuhan]</p>
+            <div className="flex items-start space-x-4">
+              <Package 
+                size={28} 
+                className="text-sky-500 group-hover:scale-110 transition-transform flex-shrink-0 mt-1" 
+              />
+              <div>
+                <h3 className="text-lg sm:text-xl font-semibold text-sky-400 group-hover:text-sky-300 mb-1">
+                  Barang Saya
+                </h3>
+                <p className="text-slate-400 text-sm sm:text-base">
+                  Lihat dan kelola semua barang yang sedang Anda titipkan.
+                </p>
               </div>
             </div>
-            {/* Tambahkan lebih banyak kartu atau bagan di sini */}
+          </Link>
+
+          <Link 
+            href="/dashboard/new-item" 
+            className="block p-4 sm:p-6 bg-slate-800 rounded-xl shadow-lg hover:bg-slate-700/70 transition-colors group"
+          >
+            <div className="flex items-start space-x-4">
+              <PlusCircle 
+                size={28} 
+                className="text-green-500 group-hover:scale-110 transition-transform flex-shrink-0 mt-1" 
+              />
+              <div>
+                <h3 className="text-lg sm:text-xl font-semibold text-green-400 group-hover:text-green-300 mb-1">
+                  Titip Barang Baru
+                </h3>
+                <p className="text-slate-400 text-sm sm:text-base">
+                  Tambahkan barang baru untuk dititipkan dengan aman.
+                </p>
+              </div>
+            </div>
+          </Link>
+        </div>
+      </div>
+
+      {/* Status Overview (if data available) */}
+      {summary?.ordersByStatus && !isLoadingSummary && (
+        <div className="bg-slate-800 p-4 sm:p-6 rounded-xl shadow-lg">
+          <h3 className="text-lg sm:text-xl font-semibold text-slate-200 mb-4">
+            Status Order
+          </h3>
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 sm:gap-4">
+            <div className="text-center">
+              <p className="text-xs sm:text-sm text-slate-500">Pending Pickup</p>
+              <p className="text-lg sm:text-xl font-bold text-yellow-400">
+                {summary.ordersByStatus.PENDING_PICKUP}
+              </p>
+            </div>
+            <div className="text-center">
+              <p className="text-xs sm:text-sm text-slate-500">Picked Up</p>
+              <p className="text-lg sm:text-xl font-bold text-blue-400">
+                {summary.ordersByStatus.PICKED_UP}
+              </p>
+            </div>
+            <div className="text-center">
+              <p className="text-xs sm:text-sm text-slate-500">Stored</p>
+              <p className="text-lg sm:text-xl font-bold text-green-400">
+                {summary.ordersByStatus.STORED}
+              </p>
+            </div>
+            <div className="text-center">
+              <p className="text-xs sm:text-sm text-slate-500">Pending Delivery</p>
+              <p className="text-lg sm:text-xl font-bold text-orange-400">
+                {summary.ordersByStatus.PENDING_DELIVERY}
+              </p>
+            </div>
+            <div className="text-center">
+              <p className="text-xs sm:text-sm text-slate-500">Delivered</p>
+              <p className="text-lg sm:text-xl font-bold text-slate-400">
+                {summary.ordersByStatus.DELIVERED}
+              </p>
+            </div>
           </div>
         </div>
-      </main>
+      )}
     </div>
   );
 }

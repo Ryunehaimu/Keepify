@@ -1,0 +1,52 @@
+'use client';
+
+import React, { useState } from 'react';
+import Sidebar from '@/components/sidebar';
+import { Menu, Shield } from 'lucide-react';
+
+export default function DashboardLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+
+  const toggleSidebar = () => {
+    setSidebarOpen(!sidebarOpen);
+  };
+
+  return (
+    <div className="flex min-h-screen bg-slate-900 selection:bg-sky-500 selection:text-white">
+      {/* Sidebar with toggle props */}
+      <Sidebar isOpen={sidebarOpen} onToggle={toggleSidebar} />
+
+      {/* Main Content Area */}
+      <div className="flex-1 flex flex-col">
+        {/* Mobile Header - only visible on mobile */}
+        <header className="md:hidden bg-slate-800 border-b border-slate-700 p-4 sticky top-0 z-30">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center">
+              <button
+                id="menu-button"
+                onClick={toggleSidebar}
+                className="p-2 rounded-lg hover:bg-slate-700 transition-colors mr-3 text-slate-300 hover:text-white"
+                aria-label="Toggle sidebar"
+              >
+                <Menu size={24} />
+              </button>
+              <div className="flex items-center">
+                <Shield size={24} className="text-sky-400 mr-2" />
+                <h1 className="text-lg font-bold text-sky-400">Keepify</h1>
+              </div>
+            </div>
+          </div>
+        </header>
+
+        {/* Page Content */}
+        <main className="flex-1 p-4 md:p-6 lg:p-8 md:ml-20">
+          {children}
+        </main>
+      </div>
+    </div>
+  );
+}
