@@ -1,5 +1,7 @@
-import { Entity, Column } from 'typeorm';
+// src/users/entities/user.entity.ts
+import { Entity, Column, OneToMany } from 'typeorm';
 import { BaseEntity } from '../../common/entities/base.entity';
+import { EntrustmentOrder } from '../../items/entities/entrustment-order.entity'; // Fixed import path
 
 export enum UserRole {
   USER = 'user',
@@ -35,4 +37,11 @@ export class User extends BaseEntity {
 
   @Column({ default: true })
   isActive: boolean;
+
+  // Fixed relationship to EntrustmentOrder
+  @OneToMany(() => EntrustmentOrder, (order) => order.owner, {
+    cascade: false, // Don't cascade delete orders when user is deleted (optional)
+    eager: false,   // Don't auto-load orders unless explicitly requested
+  })
+  entrustmentOrders: EntrustmentOrder[];
 }

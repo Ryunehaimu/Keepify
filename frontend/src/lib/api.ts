@@ -54,20 +54,88 @@ class ApiClient {
     return response.data; // [cite: 61]
   }
 
+  async getMyDashboardSummary(): Promise<any> { // Ganti any dengan tipe data summary
+    const response = await this.api.get('/items/summary/my-summary'); // Sesuaikan dengan endpoint backend Anda
+    return response.data;
+  }
+
   // Storage items methods
   async getMyItems() {
     const response = await this.api.get('/items/my-items'); // [cite: 61]
     return response.data; // [cite: 61]
   }
 
-  async createStorageItem(data: any) { //
-    const response = await this.api.post('/items', data); // [cite: 62]
-    return response.data; // [cite: 62]
+  async createStorageItem(data: FormData) { // Ubah tipe 'any' menjadi FormData
+    const response = await this.api.post('/items', data, {
+      headers: {
+        'Content-Type': 'multipart/form-data', // Tambahkan header di sini
+      },
+    });
+    return response.data;
+  }
+
+    // NEW: Create entrustment order method
+  async createEntrustmentOrder(formData: FormData) {
+    try {
+      console.log('Creating entrustment order...');
+      
+      // Log FormData contents for debugging
+      for (let [key, value] of formData.entries()) {
+        console.log(`FormData ${key}:`, value);
+      }
+
+      const response = await this.api.post('/items', formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      });
+      
+      console.log('Entrustment order created successfully:', response.data);
+      return response.data;
+    } catch (error: any) {
+      console.error('Create entrustment order error:', error);
+      
+      // Enhanced error handling
+      if (error.response) {
+        // Server responded with error status
+        const status = error.response.status;
+        const message = error.response.data?.message || 'Failed to create entrustment order';
+        const details = error.response.data?.details || '';
+        
+        console.error('Server error response:', {
+          status,
+          message,
+          details,
+          data: error.response.data
+        });
+        
+        throw new Error(`Error ${status}: ${message}${details ? ' - ' + details : ''}`);
+      } else if (error.request) {
+        // Request was made but no response received
+        console.error('No response received:', error.request);
+        throw new Error('Server tidak merespons. Periksa koneksi network dan pastikan backend server berjalan.');
+      } else {
+        // Something else happened
+        console.error('Request setup error:', error.message);
+        throw new Error('Terjadi kesalahan saat membuat request: ' + error.message);
+      }
+    }
   }
 
   async getStorageItem(id: number) {
     const response = await this.api.get(`/items/${id}`); // [cite: 62]
     return response.data; // [cite: 63]
+  }
+
+  public async post(url: string, data?: any, config?: AxiosRequestConfig): Promise<any> {
+    const response = await this.api.post(url, data, config);
+    return response.data;
+  }
+
+  // Metode get generik juga bisa berguna
+  public async get(url: string, config?: AxiosRequestConfig): Promise<any> {
+    const response = await this.api.get(url, config);
+    return response.data;
   }
 
   // Admin methods
