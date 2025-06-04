@@ -1,8 +1,8 @@
-'use client';
+"use client";
 
-import React, { useState } from 'react';
-import Sidebar from '@/components/sidebar';
-import { Menu, Shield } from 'lucide-react';
+import React, { useState } from "react";
+import Sidebar from "@/components/sidebar";
+import { Menu, Shield } from "lucide-react";
 
 export default function DashboardLayout({
   children,
@@ -16,13 +16,15 @@ export default function DashboardLayout({
   };
 
   return (
-    <div className="flex min-h-screen bg-slate-900 selection:bg-sky-500 selection:text-white">
-      {/* Sidebar with toggle props */}
-      <Sidebar isOpen={sidebarOpen} onToggle={toggleSidebar} />
+    <div className="grid grid-cols-[auto_1fr] min-h-screen bg-slate-900 selection:bg-sky-500 selection:text-white">
+      {/* Sidebar dengan sticky positioning */}
+      <div className="sticky top-0 h-screen">
+        <Sidebar isOpen={sidebarOpen} onToggle={toggleSidebar} />
+      </div>
 
       {/* Main Content Area */}
-      <div className="flex-1 flex flex-col">
-        {/* Mobile Header - only visible on mobile */}
+      <div className="flex flex-col min-h-screen">
+        {/* Mobile Header */}
         <header className="md:hidden bg-slate-800 border-b border-slate-700 p-4 sticky top-0 z-30">
           <div className="flex items-center justify-between">
             <div className="flex items-center">
@@ -43,7 +45,7 @@ export default function DashboardLayout({
         </header>
 
         {/* Page Content */}
-        <main className="flex-1 p-4 md:p-6 lg:p-8 md:ml-20">
+        <main className="flex-1 p-4 md:p-6 lg:p-8 overflow-auto">
           {children}
         </main>
       </div>
