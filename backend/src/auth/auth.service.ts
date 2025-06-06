@@ -97,8 +97,9 @@ export class AuthService {
     };
 
     const accessToken = await this.jwtService.signAsync(payload, {
-      secret: this.configService.get<string>('JWT_SECRET'), // [cite: 14]
-      expiresIn: this.configService.get<string>('JWT_EXPIRES_IN'), // [cite: 14]
+      secret: this.configService.get<string>('JWT_SECRET'),
+      // Provide a default value if 'JWT_EXPIRES_IN' is not found or invalid
+      expiresIn: this.configService.get<string>('JWT_EXPIRES_IN') || '1h', // Default to 1 hour
     });
 
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
