@@ -13,40 +13,51 @@ export interface User {
 }
 
 // Storage Item types
-export enum StorageStatus {
-  PENDING = 'pending', // [cite: 45]
-  PICKED_UP = 'picked_up', // [cite: 45]
-  STORED = 'stored', // [cite: 45]
-  READY_PICKUP = 'ready_pickup', // [cite: 45]
-  RETURNED = 'returned', // [cite: 45]
-  CANCELLED = 'cancelled', // [cite: 45]
+export enum OrderStatus {
+  PENDING_PICKUP = 'PENDING_PICKUP',
+  PICKED_UP = 'PICKED_UP',
+  STORED = 'STORED',
+  PENDING_DELIVERY = 'PENDING_DELIVERY',
+  DELIVERED = 'DELIVERED',
+  CANCELLED = 'CANCELLED',
+}
+export interface EntrustmentOrder {
+  id: number;
+  ownerId: number; // Mengikuti nama backend
+  allowChecks: boolean; // Mengikuti nama backend
+  monitoringFrequency: MonitoringFrequency;
+  pickupRequestedDate: string; // Di frontend tetap string untuk kemudahan, konversi ke Date saat dikirim
+  pickupAddress: string;
+  contactPhone: string; // Field yang ditambahkan
+  expectedRetrievalDate?: string;
+  status: OrderStatus;
+  imagePath?: string; // Field yang ditambahkan
+  createdAt: string;
+  updatedAt: string;
+  entrustedItems: EntrustedItem[]; // Mengikuti nama backend
+  owner?: User; // Relasi ke objek User (opsional, tergantung respons API)
+}
+
+
+// INTERFACE UNTUK ITEM DI DALAM ORDER (menggantikan ItemDetail)
+
+export interface EntrustedItem {
+  id: number;
+  name: string;
+  quantity: number; // 
+  description?: string;
+  category?: string;
+  estimatedValue?: string;
+  itemCondition?: string;
+  brand?: string;
+  model?: string;
+  color?: string;
+  specialInstructions?: string;
 }
 
 export enum MonitoringFrequency {
   THREE_DAYS = '3_days', // [cite: 45]
   ONE_WEEK = '1_week', // [cite: 45]
-}
-
-export interface StorageItem {
-  id: number;
-  title: string; // [cite: 46]
-  description?: string; // [cite: 46]
-  estimatedValue?: number; // [cite: 46]
-  durationDays: number; // [cite: 46]
-  startDate?: string; // [cite: 46]
-  endDate?: string; // [cite: 46]
-  monitoringEnabled: boolean; // [cite: 46]
-  monitoringFrequency: MonitoringFrequency; // [cite: 46]
-  allowChecking: boolean; // [cite: 46]
-  status: StorageStatus; // [cite: 46]
-  pickupAddress?: string; // [cite: 47]
-  pickupDate?: string; // [cite: 47]
-  pickupNotes?: string; // [cite: 48]
-  userId: number; // [cite: 48]
-  itemDetails: ItemDetail[]; // [cite: 48]
-  monitoringRecords: MonitoringRecord[]; // [cite: 48]
-  createdAt: string; // [cite: 48]
-  updatedAt: string; // [cite: 48]
 }
 
 export interface ItemDetail {

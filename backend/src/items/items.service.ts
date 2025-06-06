@@ -4,6 +4,8 @@ import { Repository, IsNull } from 'typeorm';
 import { EntrustmentOrder, OrderStatus, MonitoringFrequency } from './entities/entrustment-order.entity';
 import { EntrustedItem } from './entities/entrusted-item.entity';
 import { CreateEntrustmentOrderDto } from './dto/create-entrustment-order.dto';
+import { CompletePickupDto } from './dto/complete-pickup.dto';
+import { User, UserRole } from '@src/users/entities/user.entity';
 
 @Injectable()
 export class ItemsService {
@@ -12,6 +14,8 @@ export class ItemsService {
     private entrustmentOrderRepository: Repository<EntrustmentOrder>,
     @InjectRepository(EntrustedItem)
     private entrustedItemRepository: Repository<EntrustedItem>,
+    @InjectRepository(User)
+    private userRepository: Repository<User>,
   ) {}
 
   async createEntrustmentOrder(
@@ -236,5 +240,60 @@ export class ItemsService {
       console.error('Error details:', error);
       throw error;
     }
+  }
+
+  //admin
+  async findOrdersByStatusForAdmin(status: OrderStatus): Promise<EntrustmentOrder[]> {
+    console.log(`ADMIN SERVICE: Fetching orders with status: ${status}`);
+    return this.entrustmentOrderRepository.find({
+      where: { status },
+      
+      relations: {
+        owner: true,          // 'owner' adalah nama relasi ke User di entity EntrustmentOrder
+        entrustedItems: true, // 'entrustedItems' adalah nama relasi ke Item di entity
+      },
+      // =================================================================
+
+      order: { createdAt: 'DESC' },
+    });
+  }
+  async completePickupProcess(
+    orderId: number,
+    completePickupDto: CompletePickupDto,
+  ): Promise<EntrustmentOrder> {
+    
+    const order = await this.entrustmentOrderRepository.findOneBy({ id: orderId });
+
+    if (!order) {
+      throw new NotFoundException(`Entrustment order with ID #${orderId} not found.`);
+    }
+
+    if (order.status !== OrderStatus.PENDING_PICKUP) {
+      throw new BadRequestException(
+        `Order status is '${order.status}', not PENDING_PICKUP. Cannot complete pickup.`,
+      );
+    }
+    order.status = OrderStatus.PICKED_UP;
+    
+    return this.entrustmentOrderRepository.save(order);
+  }
+  async getAdminDashboardSummary() {
+    const totalUsers = await this.userRepository.count({ where: { role: UserRole.USER } });
+    const totalOrders = await this.entrustmentOrderRepository.count();
+
+    const totalStoredItemsResult = await this.entrustedItemRepository
+      .createQueryBuilder("item") // Mulai query dari EntrustedItem
+      .leftJoin("item.entrustmentOrder", "order") // Gabungkan dengan EntrustmentOrder
+      .where("order.status = :status", { status: OrderStatus.STORED }) // Filter jika status order adalah 'STORED'
+      .select("SUM(item.quantity)", "total") // Jumlahkan kuantitas dari item yang sudah terfilter
+      .getRawOne();
+      
+    const totalItems = parseInt(totalStoredItemsResult.total) || 0;
+
+    return {
+      totalUsers,
+      totalOrders,
+      totalItems,
+    };
   }
 }

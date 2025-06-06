@@ -1,9 +1,20 @@
+// src/components/sidebar.tsx
 'use client';
 
 import React, { useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
-import { LayoutDashboard, ListChecks, PackagePlus, LogOut, UserCircle, X, Shield } from 'lucide-react';
+import { 
+    LayoutDashboard, 
+    ListChecks, 
+    PackagePlus, 
+    LogOut, 
+    UserCircle, 
+    X, 
+    Shield,
+    Users, // <-- PERUBAHAN: Ikon baru untuk admin
+    FileCog // <-- PERUBAHAN: Ikon baru untuk admin
+} from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 
 interface SidebarProps {
@@ -14,18 +25,29 @@ interface SidebarProps {
 const Sidebar = ({ isOpen = false, onToggle }: SidebarProps) => {
   const pathname = usePathname();
   const router = useRouter();
-  const auth = useAuth();
-  const { user } = auth;
+  const { user, logoutAction } = useAuth();
   
-  // Get the logout function - adjust name as needed
-  const logoutFunction = auth.logoutAction; // Changed from logout to logoutAction
+  // PERUBAHAN: Mendefinisikan menu navigasi berdasarkan peran pengguna
+  const userNavItems = [
+    { href: '/dashboard', label: 'Ringkasan', icon: LayoutDashboard },
+    { href: '/dashboard/my-items', label: 'Barang Saya', icon: ListChecks },
+    { href: '/dashboard/new-item', label: 'Titip Barang', icon: PackagePlus },
+  ];
 
-  // Close sidebar when clicking outside on mobile
+  const adminNavItems = [
+    { href: '/dashboard', label: 'Admin Overview', icon: LayoutDashboard },
+    { href: '/dashboard/manage-orders-pickup', label: 'Kelola Order Pickup', icon: FileCog },
+    { href: '/dashboard/manage-orders-monitoring', label: 'Monitoring Barang', icon: FileCog },
+    { href: '/dashboard/manage-users', label: 'Kelola Pengguna', icon: Users },
+  ];
+
+  // Pilih menu yang akan ditampilkan
+  const navItems = user?.role === 'admin' ? adminNavItems : userNavItems;
+
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       const sidebar = document.getElementById('mobile-sidebar');
       const menuButton = document.getElementById('menu-button');
-      
       if (
         isOpen && 
         sidebar && 
@@ -37,12 +59,10 @@ const Sidebar = ({ isOpen = false, onToggle }: SidebarProps) => {
         onToggle?.();
       }
     };
-
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, [isOpen, onToggle]);
 
-  // Close sidebar on route change (mobile)
   useEffect(() => {
     if (window.innerWidth < 768 && isOpen) {
       onToggle?.();
@@ -51,20 +71,14 @@ const Sidebar = ({ isOpen = false, onToggle }: SidebarProps) => {
 
   const handleLogout = async () => {
     try {
-      if (logoutFunction) {
-        await logoutFunction();
+      if (logoutAction) {
+        await logoutAction();
       }
       router.push('/login');
     } catch (error) {
       console.error('Logout failed:', error);
     }
   };
-
-  const navItems = [
-    { href: '/dashboard', label: 'Ringkasan', icon: LayoutDashboard },
-    { href: '/dashboard/my-items', label: 'Barang Saya', icon: ListChecks },
-    { href: '/dashboard/new-item', label: 'Titip Barang', icon: PackagePlus },
-  ];
 
   const isActiveLink = (href: string) => {
     if (href === '/dashboard') {
@@ -75,12 +89,9 @@ const Sidebar = ({ isOpen = false, onToggle }: SidebarProps) => {
 
   return (
     <>
-      {/* Mobile Overlay */}
       {isOpen && (
         <div className="fixed inset-0 bg-black bg-opacity-50 z-40 md:hidden transition-opacity duration-300" />
       )}
-
-      {/* Sidebar */}
       <aside
         id="mobile-sidebar"
         className={`
@@ -93,7 +104,6 @@ const Sidebar = ({ isOpen = false, onToggle }: SidebarProps) => {
         aria-label="Sidebar"
       >
         <div className="flex h-full flex-col overflow-y-auto px-3 py-4 md:py-6">
-          {/* Header with close button for mobile */}
           <div className="flex items-center justify-between mb-8">
             <Link href="/dashboard" className="flex items-center">
               <Shield size={28} className="text-sky-400 mr-2" />
@@ -101,8 +111,6 @@ const Sidebar = ({ isOpen = false, onToggle }: SidebarProps) => {
                 Keepify
               </span>
             </Link>
-            
-            {/* Close button for mobile */}
             <button
               onClick={onToggle}
               className="md:hidden p-2 rounded-lg hover:bg-slate-700 transition-colors text-slate-400 hover:text-white"
@@ -112,7 +120,6 @@ const Sidebar = ({ isOpen = false, onToggle }: SidebarProps) => {
             </button>
           </div>
           
-          {/* Navigation */}
           <nav className="flex-1 space-y-2">
             {navItems.map((item) => {
               const active = isActiveLink(item.href);
@@ -144,7 +151,6 @@ const Sidebar = ({ isOpen = false, onToggle }: SidebarProps) => {
             })}
           </nav>
 
-          {/* Bottom section with user info and logout */}
           <div className="mt-auto space-y-4 pt-6 border-t border-slate-700">
             {user && (
               <div className="flex items-center p-2 rounded-lg hover:bg-slate-700/50 transition-colors">
@@ -154,10 +160,15 @@ const Sidebar = ({ isOpen = false, onToggle }: SidebarProps) => {
                     {user.firstName} {user.lastName}
                   </p>
                   <p className="text-xs text-slate-500 truncate">{user.email}</p>
+                   {/* PERUBAHAN: Menambahkan badge untuk Admin */}
+                  {user.role === 'ADMIN' && (
+                    <span className="text-xs font-bold bg-sky-500 text-white px-2 py-0.5 rounded-full mt-1 inline-block">
+                        Admin
+                    </span>
+                  )}
                 </div>
               </div>
             )}
-            
             <button
               onClick={handleLogout}
               className="
