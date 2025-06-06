@@ -5,12 +5,14 @@ import { ItemsController } from './items.controller';
 import { ItemsService } from './items.service';
 import { EntrustmentOrder } from './entities/entrustment-order.entity';
 import { EntrustedItem } from './entities/entrusted-item.entity';
+import { User } from '@src/users/entities/user.entity';
 
 @Module({
   imports: [
     TypeOrmModule.forFeature([
       EntrustmentOrder,
       EntrustedItem,
+      User,
     ]),
   ],
   controllers: [ItemsController],

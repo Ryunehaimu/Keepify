@@ -1,5 +1,11 @@
 import axios, { AxiosInstance, AxiosRequestConfig, AxiosResponse } from 'axios'; // Ditambahkan AxiosRequestConfig dan AxiosResponse untuk tipe yang lebih eksplisit jika diperlukan, meskipun tidak secara langsung digunakan di implementasi bawah
-
+import { EntrustmentOrder } from '@/type'; 
+interface AdminDashboardSummary {
+  totalUsers: number;
+  totalOrders: number;
+  totalItems: number;
+  // Tambahkan properti lain yang relevan jika ada
+}
 class ApiClient {
   private api: AxiosInstance;
 
@@ -143,12 +149,23 @@ class ApiClient {
     const response = await this.api.get('/admin/pending-pickups'); // [cite: 63]
     return response.data; // [cite: 63]
   }
-
+  async getAdminDashboardSummary(): Promise<AdminDashboardSummary> {
+    const response = await this.api.get('/admin/dashboard/summary');
+    return response.data;
+  }
   async getMonitoringSchedule() {
     const response = await this.api.get('/admin/monitoring-schedule'); // [cite: 63]
     return response.data; // [cite: 63]
   }
+    async getOrdersByStatus(status: string): Promise<EntrustmentOrder[]> {
+    const response = await this.api.get('/admin/orders', { params: { status } });
+    return response.data;
+  }
 
+  async completePickup(orderId: number, data: { signatureImage: string }): Promise<EntrustmentOrder> {
+    const response = await this.api.post(`/admin/orders/${orderId}/complete-pickup`, data);
+    return response.data;
+  }
   // File upload
   async uploadFile(file: File, path: string) { // [cite: 64]
     const formData = new FormData(); // [cite: 64]
@@ -162,6 +179,7 @@ class ApiClient {
     });
     return response.data; // [cite: 65]
   }
+  
 }
 
 export const apiClient = new ApiClient(); // [cite: 65]

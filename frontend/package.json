@@ -20,6 +20,7 @@
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
     "react-hook-form": "^7.57.0",
+    "react-signature-canvas": "^1.1.0-alpha.2",
     "react-signature-pad-wrapper": "^4.1.0",
     "zod": "^3.25.48"
   },
@@ -29,6 +30,7 @@
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "@types/react-signature-canvas": "^1.0.7",
     "eslint": "^9",
     "eslint-config-next": "15.3.3",
     "tailwindcss": "^4",
