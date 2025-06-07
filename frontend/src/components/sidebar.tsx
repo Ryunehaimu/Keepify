@@ -1,21 +1,21 @@
 // src/components/sidebar.tsx
-'use client';
+"use client";
 
-import React, { useEffect } from 'react';
-import Link from 'next/link';
-import { usePathname, useRouter } from 'next/navigation';
-import { 
-    LayoutDashboard, 
-    ListChecks, 
-    PackagePlus, 
-    LogOut, 
-    UserCircle, 
-    X, 
-    Shield,
-    Users, // <-- PERUBAHAN: Ikon baru untuk admin
-    FileCog // <-- PERUBAHAN: Ikon baru untuk admin
-} from 'lucide-react';
-import { useAuth } from '@/contexts/AuthContext';
+import React, { useEffect, useRef } from "react";
+import Link from "next/link";
+import { usePathname, useRouter } from "next/navigation";
+import {
+  LayoutDashboard,
+  ListChecks,
+  PackagePlus,
+  LogOut,
+  UserCircle,
+  X,
+  Shield,
+  Users,
+  FileCog,
+} from "lucide-react";
+import { useAuth } from "@/contexts/AuthContext";
 
 interface SidebarProps {
   isOpen?: boolean;
@@ -26,31 +26,40 @@ const Sidebar = ({ isOpen = false, onToggle }: SidebarProps) => {
   const pathname = usePathname();
   const router = useRouter();
   const { user, logoutAction } = useAuth();
-  
-  // PERUBAHAN: Mendefinisikan menu navigasi berdasarkan peran pengguna
+  const previousPathnameRef = useRef(pathname);
+
   const userNavItems = [
-    { href: '/dashboard', label: 'Ringkasan', icon: LayoutDashboard },
-    { href: '/dashboard/my-items', label: 'Barang Saya', icon: ListChecks },
-    { href: '/dashboard/new-item', label: 'Titip Barang', icon: PackagePlus },
+    { href: "/dashboard", label: "Ringkasan", icon: LayoutDashboard },
+    { href: "/dashboard/my-items", label: "Barang Saya", icon: ListChecks },
+    { href: "/dashboard/new-item", label: "Titip Barang", icon: PackagePlus },
   ];
 
   const adminNavItems = [
-    { href: '/dashboard', label: 'Admin Overview', icon: LayoutDashboard },
-    { href: '/dashboard/manage-orders-pickup', label: 'Kelola Order Pickup', icon: FileCog },
-    { href: '/dashboard/manage-orders-monitoring', label: 'Monitoring Barang', icon: FileCog },
-    { href: '/dashboard/manage-users', label: 'Kelola Pengguna', icon: Users },
+    { href: "/dashboard", label: "Admin Overview", icon: LayoutDashboard },
+    {
+      href: "/dashboard/manage-orders-pickup",
+      label: "Kelola Order Pickup",
+      icon: FileCog,
+    },
+    {
+      href: "/dashboard/manage-orders-monitoring",
+      label: "Monitoring Barang",
+      icon: FileCog,
+    },
+    { href: "/dashboard/manage-users", label: "Kelola Pengguna", icon: Users },
   ];
 
-  // Pilih menu yang akan ditampilkan
-  const navItems = user?.role === 'admin' ? adminNavItems : userNavItems;
+  const navItems = user?.role === "admin" ? adminNavItems : userNavItems;
 
+  // Handle click outside to close sidebar
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
-      const sidebar = document.getElementById('mobile-sidebar');
-      const menuButton = document.getElementById('menu-button');
+      const sidebar = document.getElementById("mobile-sidebar");
+      const menuButton = document.getElementById("menu-button");
+
       if (
-        isOpen && 
-        sidebar && 
+        isOpen &&
+        sidebar &&
         !sidebar.contains(event.target as Node) &&
         menuButton &&
         !menuButton.contains(event.target as Node) &&
@@ -59,30 +68,51 @@ const Sidebar = ({ isOpen = false, onToggle }: SidebarProps) => {
         onToggle?.();
       }
     };
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
+
+    // Only add listener when sidebar is open
+    if (isOpen) {
+      document.addEventListener("mousedown", handleClickOutside);
+    }
+
+    return () => document.removeEventListener("mousedown", handleClickOutside);
   }, [isOpen, onToggle]);
 
+  // Handle route changes - only close if pathname actually changed and sidebar was open
   useEffect(() => {
+    // Check if pathname actually changed and sidebar is open on mobile
+    if (
+      pathname !== previousPathnameRef.current &&
+      isOpen &&
+      window.innerWidth < 768
+    ) {
+      onToggle?.();
+    }
+
+    // Update the previous pathname reference
+    previousPathnameRef.current = pathname;
+  }, [pathname, isOpen, onToggle]);
+
+  // Handle link clicks - close sidebar on mobile
+  const handleLinkClick = () => {
     if (window.innerWidth < 768 && isOpen) {
       onToggle?.();
     }
-  }, [pathname, isOpen, onToggle]);
+  };
 
   const handleLogout = async () => {
     try {
       if (logoutAction) {
         await logoutAction();
       }
-      router.push('/login');
+      router.push("/login");
     } catch (error) {
-      console.error('Logout failed:', error);
+      console.error("Logout failed:", error);
     }
   };
 
   const isActiveLink = (href: string) => {
-    if (href === '/dashboard') {
-      return pathname === '/dashboard';
+    if (href === "/dashboard") {
+      return pathname === "/dashboard";
     }
     return pathname.startsWith(href);
   };
@@ -99,13 +129,17 @@ const Sidebar = ({ isOpen = false, onToggle }: SidebarProps) => {
           bg-slate-800 text-slate-100 border-r border-slate-700
           transform transition-transform duration-300 ease-in-out
           md:translate-x-0 md:static md:z-auto
-          ${isOpen ? 'translate-x-0' : '-translate-x-full'}
+          ${isOpen ? "translate-x-0" : "-translate-x-full"}
         `}
         aria-label="Sidebar"
       >
         <div className="flex h-full flex-col overflow-y-auto px-3 py-4 md:py-6">
           <div className="flex items-center justify-between mb-8">
-            <Link href="/dashboard" className="flex items-center">
+            <Link
+              href="/dashboard"
+              className="flex items-center"
+              onClick={handleLinkClick}
+            >
               <Shield size={28} className="text-sky-400 mr-2" />
               <span className="text-2xl font-bold text-sky-400 whitespace-nowrap">
                 Keepify
@@ -119,7 +153,7 @@ const Sidebar = ({ isOpen = false, onToggle }: SidebarProps) => {
               <X size={20} />
             </button>
           </div>
-          
+
           <nav className="flex-1 space-y-2">
             {navItems.map((item) => {
               const active = isActiveLink(item.href);
@@ -127,22 +161,30 @@ const Sidebar = ({ isOpen = false, onToggle }: SidebarProps) => {
                 <Link
                   key={item.label}
                   href={item.href}
+                  onClick={handleLinkClick}
                   className={`
                     group flex items-center rounded-lg p-3 text-base font-normal transition-all duration-200
-                    ${active 
-                      ? 'bg-sky-600 text-white shadow-md' 
-                      : 'text-slate-300 hover:bg-slate-700 hover:text-sky-300'
+                    ${
+                      active
+                        ? "bg-sky-600 text-white shadow-md"
+                        : "text-slate-300 hover:bg-slate-700 hover:text-sky-300"
                     }
                   `}
                 >
-                  <item.icon 
-                    size={22} 
+                  <item.icon
+                    size={22}
                     className={`
                       transition-all duration-200 group-hover:scale-110
-                      ${active ? 'text-white' : 'text-slate-400 group-hover:text-sky-300'}
-                    `} 
+                      ${
+                        active
+                          ? "text-white"
+                          : "text-slate-400 group-hover:text-sky-300"
+                      }
+                    `}
                   />
-                  <span className="ml-3 flex-1 whitespace-nowrap">{item.label}</span>
+                  <span className="ml-3 flex-1 whitespace-nowrap">
+                    {item.label}
+                  </span>
                   {active && (
                     <div className="w-2 h-2 bg-white rounded-full animate-pulse" />
                   )}
@@ -154,16 +196,20 @@ const Sidebar = ({ isOpen = false, onToggle }: SidebarProps) => {
           <div className="mt-auto space-y-4 pt-6 border-t border-slate-700">
             {user && (
               <div className="flex items-center p-2 rounded-lg hover:bg-slate-700/50 transition-colors">
-                <UserCircle size={36} className="text-slate-400 mr-3 flex-shrink-0" />
+                <UserCircle
+                  size={36}
+                  className="text-slate-400 mr-3 flex-shrink-0"
+                />
                 <div className="min-w-0 flex-1">
                   <p className="text-sm font-semibold text-slate-200 truncate">
                     {user.firstName} {user.lastName}
                   </p>
-                  <p className="text-xs text-slate-500 truncate">{user.email}</p>
-                   {/* PERUBAHAN: Menambahkan badge untuk Admin */}
-                  {user.role === 'ADMIN' && (
+                  <p className="text-xs text-slate-500 truncate">
+                    {user.email}
+                  </p>
+                  {user.role === "ADMIN" && (
                     <span className="text-xs font-bold bg-sky-500 text-white px-2 py-0.5 rounded-full mt-1 inline-block">
-                        Admin
+                      Admin
                     </span>
                   )}
                 </div>
@@ -177,7 +223,10 @@ const Sidebar = ({ isOpen = false, onToggle }: SidebarProps) => {
                 hover:scale-105 active:scale-95
               "
             >
-              <LogOut size={20} className="mr-2 group-hover:scale-110 transition-transform" />
+              <LogOut
+                size={20}
+                className="mr-2 group-hover:scale-110 transition-transform"
+              />
               Logout
             </button>
           </div>
