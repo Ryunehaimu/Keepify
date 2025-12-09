@@ -1,144 +1,100 @@
 'use client';
 
-import React, { useState } from 'react';
-import {apiClient} from '@/lib/api'; 
-// pastikan path ini sesuai projectmu
+import { useState, useRef } from 'react';
+import { Loader2 } from 'lucide-react';
+import SignatureCanvas from 'react-signature-canvas';
+import { EntrustmentOrder } from '@/type';
+import { apiClient } from '@/lib/api';
 
-// =========================
-// TYPES
-// =========================
-
-type EntrustedItem = {
-  id: number;
-  name: string;
-  quantity: number;
-  brand?: string;
-  model?: string;
-  color?: string;
-  description?: string;
-};
-
-type Owner = {
-  id: number;
-  name: string;
-  email?: string;
-};
-
-type EntrustmentOrder = {
-  id: number;
-  status: string;
-  owner: Owner;
-  pickupAddress: string;
-  pickupRequestedDate: string;
-  entrustedItems: EntrustedItem[];
-};
-
-interface MonitoringModalProps {
-  order: MonitoringModalOrder;
+interface ModalProps {
+  order: EntrustmentOrder;
   onClose: () => void;
   onSuccess: () => void;
 }
 
-type MonitoringModalOrder = Omit<EntrustmentOrder, 'owner'> & { 
-  owner?: {
-    id: number;
-    name: string;
-    email?: string;
-  }
-};
-// =========================
-// COMPONENT
-// =========================
-
-export default function MonitoringModal({
-  order,
-  onClose,
-  onSuccess,
-}: MonitoringModalProps) {
+export default function MonitoringModal({ order, onClose, onSuccess }: ModalProps) {
+  const [checkedItems, setCheckedItems] = useState<Record<number, boolean>>({});
   const [status, setStatus] = useState(order.status);
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const sigCanvas = useRef<SignatureCanvas>(null);
 
-  const handleUpdate = () => {
+  const handleCheckboxChange = (id: number) => setCheckedItems(prev => ({ ...prev, [id]: !prev[id] }));
+  const clearSignature = () => sigCanvas.current?.clear();
+  const isAllChecked = order.entrustedItems?.length === Object.values(checkedItems).filter(Boolean).length;
+
+  const handleSubmit = async () => {
+    if (['PENDING_PICKUP', 'PENDING_DELIVERY'].includes(status) && sigCanvas.current?.isEmpty()) {
+      setError('Tanda tangan pelanggan diperlukan.');
+      return;
+    }
+
     setLoading(true);
+    setError(null);
+    try {
+      if (status === 'PENDING_PICKUP') {
+        await apiClient.completePickup(order.id, { signatureImage: sigCanvas.current?.toDataURL() || '' });
+      }
+      else if (status === 'PICKED_UP') await apiClient.adminUpdateStatus(order.id, { status: 'STORED' });
+      else if (status === 'STORED') await apiClient.adminUpdateStatus(order.id, { status: 'PENDING_DELIVERY' });
+      else if (status === 'PENDING_DELIVERY') await apiClient.adminUpdateStatus(order.id, { status: 'DELIVERED' });
 
-    apiClient
-      .adminUpdateStatus(order.id, { status })
-      .then(() => {
-        onSuccess();
-      })
-      .catch((err) => {
-        console.error(err);
-        alert('Gagal update status');
-      })
-      .finally(() => setLoading(false));
+      onSuccess();
+    } catch (err: any) {
+      setError(err.message || 'Gagal memproses order');
+      console.error(err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const showChecklist = ['PENDING_PICKUP', 'PENDING_DELIVERY'].includes(status);
+  const getButtonText = () => {
+    switch (status) {
+      case 'PENDING_PICKUP': return 'Selesaikan Pickup';
+      case 'PICKED_UP': return 'Simpan ke Storage';
+      case 'STORED': return 'Request Delivery';
+      case 'PENDING_DELIVERY': return 'Selesaikan Delivery';
+      case 'DELIVERED': return 'Sudah Selesai';
+      default: return 'Update Status';
+    }
   };
 
   return (
-    <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50">
-      <div className="bg-slate-800 p-6 rounded-lg w-full max-w-2xl max-h-[90vh] overflow-y-auto border border-slate-700 shadow-xl">
-        
-        {/* HEADER */}
-        <h2 className="text-xl font-bold text-white mb-4">
-          Monitoring Order #{order.id}
-        </h2>
+    <div className="fixed inset-0 bg-black/70 flex justify-center items-center z-50">
+      <div className="bg-slate-800 text-white rounded-lg p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+        <h2 className="text-2xl font-bold text-sky-400 mb-2">Proses Order #{order.id}</h2>
 
-        {/* ORDER SUMMARY */}
-        <div className="mb-6 text-slate-300 text-sm space-y-1">
-          <p><b>Nama Pemilik:</b> {order.owner?.name}</p>
-          <p><b>Alamat Pickup:</b> {order.pickupAddress}</p>
-          <p><b>Tanggal Request Pickup:</b> {new Date(order.pickupRequestedDate).toLocaleString()}</p>
-          <p><b>Status Saat Ini:</b> {order.status}</p>
-        </div>
-
-        {/* ITEMS LIST */}
-        <h3 className="text-lg font-semibold text-white mb-2">Detail Barang</h3>
-        <div className="space-y-3">
-          {order.entrustedItems.map((item) => (
-            <div
-              key={item.id}
-              className="p-3 bg-slate-700 rounded-md border border-slate-600"
-            >
-              <p><b>Nama:</b> {item.name}</p>
-              <p><b>Jumlah:</b> {item.quantity}</p>
-              {item.brand && <p><b>Brand:</b> {item.brand}</p>}
-              {item.model && <p><b>Model:</b> {item.model}</p>}
-              {item.color && <p><b>Warna:</b> {item.color}</p>}
-              {item.description && <p><b>Deskripsi:</b> {item.description}</p>}
+        {showChecklist && (
+          <>
+            <div className="space-y-2">
+              <h3 className="font-semibold">Checklist Barang:</h3>
+              {order.entrustedItems?.map(item => (
+                <label key={item.id} className="flex items-center bg-slate-700 p-3 rounded-md cursor-pointer hover:bg-slate-600">
+                  <input type="checkbox" className="h-5 w-5 rounded bg-slate-900 border-slate-600 text-sky-500"
+                    checked={!!checkedItems[item.id]} onChange={() => handleCheckboxChange(item.id)} />
+                  <span className="ml-3 font-medium">{item.name}</span>
+                </label>
+              ))}
             </div>
-          ))}
-        </div>
 
-        {/* STATUS UPDATE */}
-        <div className="mt-6">
-          <label className="text-slate-200 block mb-1">Ubah Status Order</label>
-          <select
-            value={status}
-            onChange={(e) => setStatus(e.target.value)}
-            className="w-full p-2 rounded bg-slate-700 text-white border border-slate-600"
-          >
-            <option value="PENDING_PICKUP">Menunggu Dijemput</option>
-            <option value="PICKED_UP">Sudah Dijemput</option>
-            <option value="STORED">Disimpan</option>
-            <option value="PENDING_DELIVERY">Menunggu Diantar</option>
-            <option value="DELIVERED">Sudah Diantar</option>
-          </select>
-        </div>
+            <div className="space-y-2 mt-4">
+              <h3 className="font-semibold">Tanda Tangan Pelanggan:</h3>
+              <div className="bg-white rounded-md w-full h-48">
+                <SignatureCanvas ref={sigCanvas} penColor='black' canvasProps={{ className: 'w-full h-full rounded-md' }} />
+              </div>
+              <button onClick={clearSignature} className="text-xs text-sky-400 hover:underline">Bersihkan Tanda Tangan</button>
+            </div>
+          </>
+        )}
 
-        {/* ACTION BUTTONS */}
-        <div className="flex justify-end gap-3 mt-6">
-          <button
-            onClick={onClose}
-            className="px-4 py-2 bg-slate-600 rounded hover:bg-slate-700"
-          >
-            Tutup
-          </button>
+        {error && <p className="text-red-400 text-sm mt-2">{error}</p>}
 
-          <button
-            onClick={handleUpdate}
-            disabled={loading}
-            className="px-4 py-2 bg-sky-600 rounded hover:bg-sky-700 disabled:bg-slate-500"
-          >
-            {loading ? 'Menyimpan...' : 'Update Status'}
+        <div className="flex justify-end gap-4 pt-4">
+          <button onClick={onClose} className="bg-slate-600 hover:bg-slate-700 text-white font-bold py-2 px-4 rounded">Batal</button>
+          <button onClick={handleSubmit} disabled={(showChecklist && !isAllChecked) || loading} className="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded disabled:bg-slate-500 disabled:cursor-not-allowed flex items-center gap-2">
+            {loading && <Loader2 className="h-4 w-4 animate-spin" />}
+            {loading ? 'Memproses...' : getButtonText()}
           </button>
         </div>
       </div>
