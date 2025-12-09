@@ -26,20 +26,27 @@ export class AdminController {
   constructor(
     // Inject ItemsService dari ItemsModule
     private readonly itemsService: ItemsService,
-  ) {}
+  ) { }
 
   /**
    * [ADMIN] Mendapatkan daftar order berdasarkan status
    * @URL GET /api/admin/orders?status=PENDING_PICKUP
    */
   @Get('orders')
-  getOrdersByStatus(@Query('status') status: OrderStatus) {
-    if (!status) {
-      throw new BadRequestException('Query parameter "status" is required.');
+  getOrdersByStatus(@Query('status') status?: string) {
+    // Jika status kosong → ambil semua orders
+    if (!status || status.trim() === '') {
+      return this.itemsService.findAllOrdersForAdmin();
     }
-    // Panggil metode dari ItemsService yang sudah kita buat sebelumnya
-    return this.itemsService.findOrdersByStatusForAdmin(status);
+
+    // Validasi status agar tidak error
+    if (!Object.values(OrderStatus).includes(status as OrderStatus)) {
+      throw new BadRequestException('Invalid status value.');
+    }
+
+    return this.itemsService.findOrdersByStatusForAdmin(status as OrderStatus);
   }
+
 
   /**
    * [ADMIN] Menyelesaikan proses pickup untuk sebuah order
@@ -57,6 +64,14 @@ export class AdminController {
   @Get('dashboard/summary')
   getDashboardSummary() {
     return this.itemsService.getAdminDashboardSummary();
+  }
+
+  @Post('orders/:id/update-status')
+  updateOrderStatus(
+    @Param('id', ParseIntPipe) id: number,
+    @Body('status') status: OrderStatus,
+  ) {
+    return this.itemsService.updateOrderStatusForAdmin(id, status);
   }
 
   // Anda bisa menambahkan endpoint admin lainnya di sini di masa depan
