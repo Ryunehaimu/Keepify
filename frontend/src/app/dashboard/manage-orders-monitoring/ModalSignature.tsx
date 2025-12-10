@@ -10,7 +10,6 @@ interface ModalSignatureProps {
   onConfirm: (signatureImage: string) => void;
 }
 
-
 export default function ModalSignature({ order, onClose, onConfirm }: ModalSignatureProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [drawing, setDrawing] = useState(false);
@@ -24,7 +23,6 @@ export default function ModalSignature({ order, onClose, onConfirm }: ModalSigna
     ctx.strokeStyle = '#00f';
     ctx.lineWidth = 2;
     ctx.lineCap = 'round';
-
     const rect = canvasRef.current.getBoundingClientRect();
     let x: number, y: number;
     if ('touches' in e) {

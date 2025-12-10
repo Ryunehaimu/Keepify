@@ -28,7 +28,6 @@ export default function MonitoringModal({ order, onClose, onSuccess }: ModalProp
       setError('Tanda tangan pelanggan diperlukan.');
       return;
     }
-
     setLoading(true);
     setError(null);
     try {

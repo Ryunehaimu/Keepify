@@ -142,7 +142,6 @@ export default function ManageOrdersPickupPage() {
         const currentIndex = STATUS_SEQUENCE.indexOf(order.status as typeof STATUS_SEQUENCE[number]);
         const nextStatus = STATUS_SEQUENCE[currentIndex + 1];
         const isUpdating = updatingIds.includes(order.id);
-
         return (
           <div key={order.id} className="bg-slate-800 rounded-xl shadow-lg overflow-hidden hover:shadow-sky-500/20 transition-shadow duration-300 mb-6">
             <div className="flex flex-col lg:flex-row">
