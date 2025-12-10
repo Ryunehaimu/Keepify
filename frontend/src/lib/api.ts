@@ -1,5 +1,5 @@
 import axios, { AxiosInstance, AxiosRequestConfig, AxiosResponse } from 'axios'; // Ditambahkan AxiosRequestConfig dan AxiosResponse untuk tipe yang lebih eksplisit jika diperlukan, meskipun tidak secara langsung digunakan di implementasi bawah
-import { EntrustmentOrder } from '@/type'; 
+import { EntrustmentOrder } from '@/type';
 interface AdminDashboardSummary {
   totalUsers: number;
   totalOrders: number;
@@ -7,6 +7,9 @@ interface AdminDashboardSummary {
   // Tambahkan properti lain yang relevan jika ada
 }
 class ApiClient {
+  updateOrderStatus(id: any, arg1: { status: any; }) {
+    throw new Error("Method not implemented.");
+  }
   private api: AxiosInstance;
 
   constructor() {
@@ -80,11 +83,11 @@ class ApiClient {
     return response.data;
   }
 
-    // NEW: Create entrustment order method
+  // NEW: Create entrustment order method
   async createEntrustmentOrder(formData: FormData) {
     try {
       console.log('Creating entrustment order...');
-      
+
       // Log FormData contents for debugging
       for (let [key, value] of formData.entries()) {
         console.log(`FormData ${key}:`, value);
@@ -95,26 +98,26 @@ class ApiClient {
           'Content-Type': 'multipart/form-data',
         },
       });
-      
+
       console.log('Entrustment order created successfully:', response.data);
       return response.data;
     } catch (error: any) {
       console.error('Create entrustment order error:', error);
-      
+
       // Enhanced error handling
       if (error.response) {
         // Server responded with error status
         const status = error.response.status;
         const message = error.response.data?.message || 'Failed to create entrustment order';
         const details = error.response.data?.details || '';
-        
+
         console.error('Server error response:', {
           status,
           message,
           details,
           data: error.response.data
         });
-        
+
         throw new Error(`Error ${status}: ${message}${details ? ' - ' + details : ''}`);
       } else if (error.request) {
         // Request was made but no response received
@@ -157,8 +160,16 @@ class ApiClient {
     const response = await this.api.get('/admin/monitoring-schedule'); // [cite: 63]
     return response.data; // [cite: 63]
   }
-    async getOrdersByStatus(status: string): Promise<EntrustmentOrder[]> {
+  async getOrdersByStatus(status: string): Promise<EntrustmentOrder[]> {
     const response = await this.api.get('/admin/orders', { params: { status } });
+    return response.data;
+  }
+
+  async adminUpdateStatus(
+    orderId: number,
+    body: { status: string }
+  ): Promise<EntrustmentOrder> {
+    const response = await this.api.post(`/admin/orders/${orderId}/update-status`, body);
     return response.data;
   }
 
@@ -179,7 +190,7 @@ class ApiClient {
     });
     return response.data; // [cite: 65]
   }
-  
+
 }
 
 export const apiClient = new ApiClient(); // [cite: 65]
