@@ -16,7 +16,7 @@ export class ItemsService {
     private entrustedItemRepository: Repository<EntrustedItem>,
     @InjectRepository(User)
     private userRepository: Repository<User>,
-  ) {}
+  ) { }
 
   async createEntrustmentOrder(
     userId: number,
@@ -44,8 +44,8 @@ export class ItemsService {
           pickupRequestedDate: new Date(createEntrustmentOrderDto.pickupRequestedDate),
           pickupAddress: createEntrustmentOrderDto.pickupAddress,
           contactPhone: createEntrustmentOrderDto.contactPhone,
-          expectedRetrievalDate: createEntrustmentOrderDto.expectedRetrievalDate 
-            ? new Date(createEntrustmentOrderDto.expectedRetrievalDate) 
+          expectedRetrievalDate: createEntrustmentOrderDto.expectedRetrievalDate
+            ? new Date(createEntrustmentOrderDto.expectedRetrievalDate)
             : undefined, // Use undefined instead of null
           imagePath: imagePath || undefined, // Use undefined instead of null
           status: OrderStatus.PENDING_PICKUP,
@@ -59,10 +59,10 @@ export class ItemsService {
 
         // Now create and save each entrusted item with the order ID
         const savedItems: EntrustedItem[] = [];
-        
+
         for (let i = 0; i < createEntrustmentOrderDto.entrustedItems.length; i++) {
           const itemDto = createEntrustmentOrderDto.entrustedItems[i];
-          
+
           console.log(`Processing item ${i + 1}:`, itemDto);
 
           // Validate required fields
@@ -90,7 +90,7 @@ export class ItemsService {
           // Save the item
           const savedItem = await manager.save(EntrustedItem, entrustedItem);
           savedItems.push(savedItem);
-          
+
           console.log(`Saved entrusted item ${i + 1} with ID:`, savedItem.id);
         }
 
@@ -155,8 +155,8 @@ export class ItemsService {
 
     try {
       const order = await this.entrustmentOrderRepository.findOne({
-        where: { 
-          id: orderId, 
+        where: {
+          id: orderId,
           ownerId: userId // Ensure user owns this order
         },
         relations: ['entrustedItems', 'owner'], // Include owner relation
@@ -194,7 +194,7 @@ export class ItemsService {
 
       const summary = {
         totalOrders: orders.length,
-        totalItems: orders.reduce((sum, order) => 
+        totalItems: orders.reduce((sum, order) =>
           sum + (order.entrustedItems?.reduce((itemSum, item) => itemSum + item.quantity, 0) || 0), 0
         ),
         ordersByStatus: {
@@ -208,7 +208,7 @@ export class ItemsService {
 
       console.log('Generated summary:', summary);
       console.log('=== GET USER SUMMARY SUCCESS ===');
-      
+
       return summary;
     } catch (error) {
       console.error('=== GET USER SUMMARY ERROR ===');
@@ -220,7 +220,7 @@ export class ItemsService {
   // Clean up method to remove orphaned items (optional, for maintenance)
   async cleanupOrphanedItems(): Promise<void> {
     console.log('=== CLEANUP ORPHANED ITEMS ===');
-    
+
     try {
       // Find items with null entrustmentOrderId
       const orphanedItems = await this.entrustedItemRepository.find({
@@ -247,7 +247,7 @@ export class ItemsService {
     console.log(`ADMIN SERVICE: Fetching orders with status: ${status}`);
     return this.entrustmentOrderRepository.find({
       where: { status },
-      
+
       relations: {
         owner: true,          // 'owner' adalah nama relasi ke User di entity EntrustmentOrder
         entrustedItems: true, // 'entrustedItems' adalah nama relasi ke Item di entity
@@ -261,7 +261,7 @@ export class ItemsService {
     orderId: number,
     completePickupDto: CompletePickupDto,
   ): Promise<EntrustmentOrder> {
-    
+
     const order = await this.entrustmentOrderRepository.findOneBy({ id: orderId });
 
     if (!order) {
@@ -274,7 +274,7 @@ export class ItemsService {
       );
     }
     order.status = OrderStatus.PICKED_UP;
-    
+
     return this.entrustmentOrderRepository.save(order);
   }
   async getAdminDashboardSummary() {
@@ -287,7 +287,7 @@ export class ItemsService {
       .where("order.status = :status", { status: OrderStatus.STORED }) // Filter jika status order adalah 'STORED'
       .select("SUM(item.quantity)", "total") // Jumlahkan kuantitas dari item yang sudah terfilter
       .getRawOne();
-      
+
     const totalItems = parseInt(totalStoredItemsResult.total) || 0;
 
     return {
@@ -296,4 +296,36 @@ export class ItemsService {
       totalItems,
     };
   }
+  async findAllOrdersForAdmin(): Promise<EntrustmentOrder[]> {
+    console.log("ADMIN SERVICE: Fetching ALL orders");
+
+    return this.entrustmentOrderRepository.find({
+      relations: {
+        owner: true,
+        entrustedItems: true,
+      },
+      order: { createdAt: 'DESC' },
+    });
+  }
+
+  async updateOrderStatusForAdmin(orderId: number, status: OrderStatus) {
+    const order = await this.entrustmentOrderRepository.findOne({
+      where: { id: orderId },
+      relations: ['entrustedItems', 'owner'],
+    });
+
+    if (!order) {
+      throw new NotFoundException(`Order with ID ${orderId} not found`);
+    }
+
+    // Validasi status yang diperbolehkan (optional)
+    if (!Object.values(OrderStatus).includes(status)) {
+      throw new BadRequestException('Invalid order status');
+    }
+
+    order.status = status;
+    return this.entrustmentOrderRepository.save(order);
+  }
+
+
 }
