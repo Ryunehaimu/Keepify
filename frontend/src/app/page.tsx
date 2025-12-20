@@ -1,26 +1,136 @@
 // src/app/page.tsx atau src/app/landing/page.tsx
+"use client";
 import Link from "next/link";
+import Image from "next/image";
+import warehouseImage from "@/../public/assets/images/hero.webp";
+import deliveryImage from "@/../public/assets/images/delivery.webp";
+import placementImage from "@/../public/assets/images/penataan.webp";
+import teamImage from "@/../public/assets/images/team.webp";
+import React, { useState } from "react";
+import { UserPlus, FileText, Truck } from "lucide-react";
 import { ShieldCheck, Smartphone, Edit3 } from "lucide-react"; // Contoh ikon dari lucide-react [cite: 42]
 
 export default function LandingPage() {
+  const [activeStep, setActiveStep] = useState(0);
+
+  const steps = [
+    {
+      id: 0,
+      icon: UserPlus,
+      title: "Buat Akun",
+      description: "Daftar dengan mudah dan cepat",
+      content: {
+        heading: "Mulai Dengan Mudah",
+        details:
+          "Buat akun Keepify Anda hanya dalam beberapa menit. Cukup isi informasi dasar seperti nama, email, dan nomor telepon. Akun Anda akan langsung aktif dan siap digunakan.",
+        features: [
+          "Pendaftaran cepat dalam 2 menit",
+          "Verifikasi email otomatis",
+          "Dashboard pribadi untuk kelola titipan",
+        ],
+      },
+    },
+    {
+      id: 1,
+      icon: FileText,
+      title: "Buat Pesanan",
+      description: "Isi formulir penitipan barang",
+      content: {
+        heading: "Lengkapi Formulir Digital",
+        details:
+          "Isi formulir penitipan secara online dengan detail barang yang akan dititipkan. Upload foto barang, pilih durasi penyimpanan, dan tentukan jadwal penjemputan yang sesuai dengan waktu Anda.",
+        features: [
+          "Formulir digital yang mudah diisi",
+          "Upload foto dokumentasi barang",
+          "Pilih paket dan durasi sesuai kebutuhan",
+        ],
+      },
+    },
+    {
+      id: 2,
+      icon: Truck,
+      title: "Tunggu Penjemputan",
+      description: "Tim kami akan menjemput barang",
+      content: {
+        heading: "Kami Jemput Barang Anda",
+        details:
+          "Setelah pesanan dikonfirmasi, tim Keepify akan datang ke lokasi Anda sesuai jadwal yang telah ditentukan. Barang akan diperiksa, difoto, dan ditandatangani secara digital sebelum dibawa ke gudang penyimpanan yang aman.",
+        features: [
+          "Penjemputan tepat waktu",
+          "Checklist kondisi barang lengkap",
+          "Tanda tangan digital perjanjian",
+        ],
+      },
+    },
+  ];
+
+  const facilities = [
+    {
+      id: 1,
+      label: "AREA PENYIMPANAN",
+      title: "Area Penyimpanan Aman",
+      description: "Dirancang untuk menjaga barang tetap aman dan tertata",
+      image: warehouseImage,
+      color: "sky",
+      gradient: "from-sky-500/10 to-purple-500/10",
+    },
+    {
+      id: 2,
+      label: "LAYANAN PICKUP",
+      title: "Penjemputan Barang",
+      description: "Membantu proses pengiriman barang dengan lebih mudah",
+      image: deliveryImage,
+      color: "sky",
+      gradient: "from-sky-500/10 to-purple-500/10",
+    },
+    {
+      id: 3,
+      label: "PENATAAN",
+      title: "Penataan Barang Rapi",
+      description: "Barang disusun dengan rapi agar mudah ditemukan",
+      image: placementImage,
+      color: "sky",
+      gradient: "from-sky-500/10 to-purple-500/10",
+    },
+    {
+      id: 4,
+      label: "TIM KAMI",
+      title: "Tim yang Berdedikasi",
+      description: "Bekerja dengan teliti dan penuh tanggung jawab",
+      image: teamImage,
+      color: "sky",
+      gradient: "from-sky-500/10 to-purple-500/10",
+    },
+  ];
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 to-slate-800 text-white font-main">
       {/* Header / Navigasi */}
-      <header className="sticky top-0 z-50 backdrop-blur-md backdrop-brightness-100 bg-transparent text-white p-4 sm:p-6">
-        <nav className="container mx-auto flex justify-between items-center">
+      <header
+        className="
+  sticky top-0 left-0 w-full z-50
+  backdrop-blur-md bg-transparent 
+  text-white
+"
+      >
+        <nav className="container mx-auto flex justify-between items-center p-4 sm:p-6">
           <h1 className="text-2xl sm:text-3xl font-bold text-sky-400">
             Keepify
           </h1>
           <div className="space-x-2 sm:space-x-4">
             <Link
               href="/login"
-              className="px-4 py-2 text-sm sm:text-base font-medium text-sky-400 border border-sky-400 rounded-lg hover:bg-sky-400 hover:text-slate-900 transition-colors"
+              className="px-4 py-2 text-sm sm:text-base font-medium
+                   text-sky-400 border border-sky-400 rounded-lg
+                   hover:bg-sky-400 hover:text-slate-900 transition-colors"
             >
               Login
             </Link>
             <Link
               href="/register"
-              className="px-4 py-2 text-sm sm:text-base font-medium bg-sky-500 text-white rounded-lg hover:bg-sky-600 transition-colors"
+              className="px-4 py-2 text-sm sm:text-base font-medium
+                   bg-sky-500 text-white rounded-lg
+                   hover:bg-sky-600 transition-colors"
             >
               Daftar Sekarang
             </Link>
@@ -28,42 +138,45 @@ export default function LandingPage() {
         </nav>
       </header>
 
-      <main className="relative z-10 container mx-auto px-6 flex flex-col items-center justify-center min-h-[75vh] text-center">
-        {/* Subtle light rays */}
-        <div className="absolute top-0 right-1/4 w-px h-96 bg-gradient-to-b from-slate-600/30 to-transparent rotate-12"></div>
-        <div className="absolute top-32 left-1/3 w-px h-64 bg-gradient-to-b from-slate-500/20 to-transparent -rotate-12"></div>
+      {/* ================= HERO ================= */}
+      <section className="relative h-[700px] flex items-center justify-center text-center px-6">
+        {/* GRID BACKGROUND */}
+        <div className="absolute inset-0 bg-[linear-gradient(to_right,#ffffff0d_1px,transparent_1px),linear-gradient(to_bottom,#ffffff0d_1px,transparent_1px)] bg-[size:40px_40px] opacity-50" />
 
-        {/* Launch Badge */}
-        <div className="mb-8">
-          <span className="px-4 py-2 bg-slate-800/60 backdrop-blur-sm border border-slate-700 rounded-full text-slate-300 text-sm">
-            Keepify 2.2 Launched At 21st June 2025
-          </span>
+        {/* GLOW */}
+        <div className="absolute top-[60%] left-1/2 -translate-x-1/2 w-full md:w-[900px] h-[350px] bg-sky-500/20 blur-[140px]" />
+
+        {/* CONTENT */}
+        <div className="relative z-10 max-w-5xl mx-auto">
+          <p className="text-sm text-slate-400 mb-4">
+            Secure • Digital • Always Monitored
+          </p>
+
+          <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold leading-tight">
+            Titipkan Barang Berharga Anda Secara Online
+            <br />
+            <span className="text-sky-400">Aman dan Terpantau.</span>
+          </h1>
+
+          <p className="mt-6 text-slate-400 max-w-2xl mx-auto">
+            Keepify menghadirkan layanan penitipan barang digital yang aman,
+            praktis, dan dapat dipantau kapan saja, di mana saja.
+          </p>
+
+          <div className="mt-10 flex justify-center gap-4">
+            <Link
+              href="/register"
+              className="px-8 py-3 rounded-lg bg-sky-500 hover:bg-sky-600 transition font-semibold"
+            >
+              Mulai Sekarang
+            </Link>
+          </div>
         </div>
-
-        {/* Main Heading */}
-        <h1 className="text-4xl sm:text-5xl md:text-6xl font-bold text-white mb-6 leading-tight max-w-4xl">
-          Titipkan Barang Berharga Anda,
-          <br />
-          <span className="text-sky-400">Aman dan Terpantau.</span>
-        </h1>
-
-        {/* Subtitle */}
-        <p className="text-lg sm:text-xl text-slate-400 mb-12 max-w-2xl leading-relaxed">
-          Keepify memudahkan Anda menitip barang secara digital, aman, dan bisa
-          dipantau kapan saja.
-        </p>
-
-        {/* CTA Buttons */}
-        <div className="flex flex-col sm:flex-row gap-4">
-          <button className="px-8 py-3 border border-slate-600 text-white font-semibold rounded-lg hover:bg-slate-800/50 transition-all duration-300 backdrop-blur-sm">
-            Mulai Titipkan Barang
-          </button>
-        </div>
-      </main>
+      </section>
 
       {/* About */}
       <section className="py-20 ">
-        <div className="container mx-auto">
+        <div className="container mx-auto p-4 sm:p-6">
           <div className="grid lg:grid-cols-1 gap-12 items-center">
             {/* Left Content */}
             <div className="max-w-[900px]">
@@ -92,18 +205,90 @@ export default function LandingPage() {
 
               {/* CTA Buttons */}
               <div className="text-right">
-                <button className="px-8 py-3 border border-slate-600 text-white font-semibold rounded-lg hover:bg-slate-800/50 transition-all duration-300 backdrop-blur-sm">
+                <Link
+                  href="/register"
+                  className="px-8 py-3 border border-slate-600 hover:border-slate-400 text-white font-semibold rounded-lg  transition-all duration-300 backdrop-blur-sm"
+                >
                   Mulai Titipkan Barang
-                </button>
+                </Link>
               </div>
             </div>
           </div>
         </div>
       </section>
 
+      <section className="py-20">
+        <div className="container mx-auto p-4 sm:p-6 max-w-7xl">
+          {/* Header */}
+          <div className="text-center mb-16">
+            <div className="flex items-center justify-center mb-4">
+              <div className="w-2 h-2 bg-sky-400 rounded-full mr-3"></div>
+              <span className="text-sky-400 text-sm font-medium">
+                Komitmen Layanan Aman dari Keepify
+              </span>
+            </div>
+            <h2 className="text-4xl md:text-5xl font-bold text-white leading-tight mb-4">
+              Fasilitas Aman & Tim Berdedikasi <br />
+              untuk Penyimpanan yang Terjaga
+            </h2>
+            <p className="text-gray-400 text-lg max-w-2xl mx-auto">
+              Kami menghadirkan layanan penyimpanan yang aman, rapi, dan
+              dikelola dengan penuh tanggung jawab sejak hari pertama.
+            </p>
+          </div>
+
+          {/* Gallery Grid - Featured Work Style */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {facilities.map((item) => (
+              <div
+                key={item.id}
+                className="relative group overflow-hidden rounded-2xl aspect-[4/3]"
+              >
+                {/* Gradient hover */}
+                <div
+                  className={`absolute inset-0 bg-gradient-to-br ${item.gradient} 
+        group-hover:opacity-0 transition-opacity duration-300 z-10`}
+                />
+
+                {/* Image */}
+                <Image
+                  src={item.image}
+                  alt={item.title}
+                  fill
+                  className="object-cover"
+                />
+
+                {/* Overlay */}
+                <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent z-20" />
+
+                {/* Content */}
+                <div className="absolute bottom-0 left-0 right-0 p-6 z-30">
+                  <div className="flex items-center gap-2 mb-2">
+                    <div
+                      className={`w-2 h-2 bg-${item.color}-400 rounded-full animate-pulse`}
+                    />
+                    <span
+                      className={`text-${item.color}-400 text-xs font-medium`}
+                    >
+                      {item.label}
+                    </span>
+                  </div>
+
+                  <h3 className="text-white text-xl font-bold mb-2">
+                    {item.title}
+                  </h3>
+
+                  <p className="text-gray-300 text-sm">{item.description}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
       {/* Features Section */}
       <section className="py-20 bg-gradient-to-b ">
-        <div className="container mx-auto px-4 max-w-6xl">
+        <div className="container mx-auto p-4 sm:p-6 max-w-6xl">
           {/* Header */}
           <div className="text-center mb-16">
             <div className="flex items-center justify-center mb-4">
@@ -171,33 +356,208 @@ export default function LandingPage() {
         </div>
       </section>
 
+      <section className="py-20 ">
+        <div className="container mx-auto p-4 sm:p-6 max-w-6xl">
+          {/* Header */}
+          <div className="text-center mb-16">
+            <div className="flex items-center justify-center mb-4">
+              <div className="w-2 h-2 bg-sky-400 rounded-full mr-3"></div>
+              <span className="text-sky-400 text-sm font-medium">
+                Cara Kerja Keepify
+              </span>
+            </div>
+            <h2 className="text-4xl md:text-5xl font-bold text-white leading-tight">
+              3 Langkah Mudah <br />
+              Menitipkan Barang Anda
+            </h2>
+          </div>
+
+          {/* Stackable Tabs */}
+          <div className="grid lg:grid-cols-2 gap-12 items-start">
+            {/* Left: Step Selector */}
+            <div className="space-y-4">
+              {steps.map((step, index) => {
+                const Icon = step.icon;
+                const isActive = activeStep === index;
+
+                return (
+                  <button
+                    key={step.id}
+                    onClick={() => setActiveStep(index)}
+                    className={`w-full text-left p-6 rounded-2xl border transition-all duration-300 ${
+                      isActive
+                        ? "bg-sky-400/10 border-sky-400/50 shadow-lg shadow-sky-400/20"
+                        : "bg-gray-800/30 border-gray-700/50 hover:border-gray-600/50"
+                    }`}
+                  >
+                    <div className="flex items-start gap-4">
+                      {/* Step Number & Icon */}
+                      <div
+                        className={`flex-shrink-0 w-14 h-14 rounded-xl flex items-center justify-center transition-all duration-300 ${
+                          isActive
+                            ? "bg-sky-400/20 border-2 border-sky-400"
+                            : "bg-gray-700/50 border-2 border-gray-600"
+                        }`}
+                      >
+                        <Icon
+                          size={24}
+                          className={
+                            isActive ? "text-sky-400" : "text-gray-400"
+                          }
+                        />
+                      </div>
+
+                      {/* Content */}
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 mb-1">
+                          <span
+                            className={`text-xs font-medium ${
+                              isActive ? "text-sky-400" : "text-gray-500"
+                            }`}
+                          >
+                            Langkah {index + 1}
+                          </span>
+                        </div>
+                        <h3
+                          className={`text-xl font-semibold mb-1 transition-colors ${
+                            isActive ? "text-white" : "text-gray-300"
+                          }`}
+                        >
+                          {step.title}
+                        </h3>
+                        <p
+                          className={`text-sm transition-colors ${
+                            isActive ? "text-gray-300" : "text-gray-500"
+                          }`}
+                        >
+                          {step.description}
+                        </p>
+                      </div>
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
+
+            {/* Right: Step Content */}
+            <div className="lg:sticky lg:top-8">
+              <div className="bg-gradient-to-br from-gray-800/50 to-gray-900/50 rounded-2xl p-8 border border-gray-700/50 backdrop-blur-sm">
+                {/* Step Indicator */}
+                <div className="flex items-center gap-2 mb-6">
+                  <div className="w-8 h-8 bg-sky-400 rounded-lg flex items-center justify-center">
+                    <span className="text-white font-bold text-sm">
+                      {activeStep + 1}
+                    </span>
+                  </div>
+                  <span className="text-sky-400 text-sm font-medium">
+                    Langkah {activeStep + 1} dari 3
+                  </span>
+                </div>
+
+                {/* Content */}
+                <h3 className="text-2xl font-bold text-white mb-4">
+                  {steps[activeStep].content.heading}
+                </h3>
+                <p className="text-gray-300 mb-6 leading-relaxed">
+                  {steps[activeStep].content.details}
+                </p>
+
+                {/* Features List */}
+                <div className="space-y-3">
+                  {steps[activeStep].content.features.map((feature, idx) => (
+                    <div key={idx} className="flex items-start gap-3">
+                      <div className="w-5 h-5 bg-sky-400/20 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
+                        <div className="w-2 h-2 bg-sky-400 rounded-full"></div>
+                      </div>
+                      <span className="text-gray-300 text-sm">{feature}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
       {/* Call to Action Section */}
       <section className="py-16 sm:py-24">
-        <div className="container mx-auto px-4 text-center border border-transparent *:rounded-2xl overflow-hidden relative">
-          {/* Background image */}
-          <div
-            className="absolute inset-0 z-0 bg-cover bg-center"
-            style={{
-              backgroundImage: `url('/images/light-trail.jpg')`, // Ganti dengan path gambar kamu
-            }}
-          ></div>
+        <div className="container mx-auto p-4 sm:p-6">
+          <div className="text-center border border-transparent rounded-2xl overflow-hidden relative">
+            <div className="absolute inset-0">
+              {/* Glow kiri atas */}
+              <div className="absolute -top-40 -left-40 w-[600px] h-[600px] bg-sky-500/30 rounded-full blur-[140px]" />
 
-          {/* Overlay semi-gelap agar teks lebih terbaca */}
-          <div className="absolute inset-0 bg-slate-900/50 z-10"></div>
+              {/* Glow kanan */}
+              <div className="absolute top-1/4 -right-40 w-[600px] h-[600px] bg-sky-500/30 rounded-full blur-[140px]" />
 
-          {/* Content */}
-          <div className="relative z-20 py-20 sm:py-32 px-4">
-            <h3 className="text-3xl sm:text-4xl font-bold mb-6">
-              Siap untuk Merasakan Ketenangan?
-            </h3>
-            <p className="text-lg sm:text-xl text-slate-300 mb-10 max-w-xl mx-auto">
-              Bergabunglah dengan Keepify sekarang dan nikmati layanan penitipan
-              barang yang aman, transparan, dan modern.
-            </p>
-            <div className="flex flex-col justify-center sm:flex-row gap-4">
-              <button className="px-8 py-3 border border-slate-600 text-white font-semibold rounded-lg hover:bg-slate-800/50 transition-all duration-300 backdrop-blur-sm">
-                Mulai Titipkan Barang
-              </button>
+              {/* Glow bawah */}
+              <div className="absolute -bottom-40 left-1/3 w-[500px] h-[500px] bg-sky-400/20 rounded-full blur-[140px]" />
+            </div>
+
+            {/* Overlay */}
+            <div className="absolute inset-0 bg-slate-900/50 z-10"></div>
+
+            {/* Content */}
+            <div className="relative z-20 py-20 sm:py-32 px-4">
+              <h3 className="text-3xl sm:text-4xl font-bold mb-6">
+                Terhubung dengan Keepify
+              </h3>
+
+              <p className="text-gray-400 text-lg max-w-2xl mb-10 mx-auto">
+                Ikuti perjalanan Keepify dan hubungi kami untuk mendapatkan
+                informasi terbaru seputar layanan penyimpanan barang yang aman
+                dan terpercaya.
+              </p>
+
+              <div className="flex flex-row justify-center gap-4">
+                {/* Instagram */}
+                <a
+                  href="https://www.instagram.com/keepify.app/"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  aria-label="Instagram Keepify"
+                  className="flex items-center gap-2 px-3 py-3 border border-slate-600 hover:border-slate-400 text-white font-semibold rounded-xl hover:bg-slate-800/50 transition"
+                >
+                  <Image
+                    src="/assets/icons/instagram.svg"
+                    alt="Instagram Keepify"
+                    width={32}
+                    height={32}
+                  />
+                </a>
+
+                {/* TikTok */}
+                <a
+                  href="https://www.tiktok.com/@keepify.app"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  aria-label="Tiktok Keepify"
+                  className="flex items-center gap-2 px-3 py-3 border border-slate-600 hover:border-slate-400 text-white font-semibold rounded-xl hover:bg-slate-800/50 transition"
+                >
+                  <Image
+                    src="/assets/icons/tiktok.svg"
+                    alt="Tiktok Keepify"
+                    width={32}
+                    height={32}
+                  />
+                </a>
+
+                {/* WhatsApp */}
+                <a
+                  href="https://wa.me/6281392800526"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  aria-label="Whatsapp Keepify"
+                  className="flex items-center gap-2 px-3 py-3 border border-slate-600 hover:border-slate-400 text-white font-semibold rounded-xl hover:bg-slate-800/50 transition"
+                >
+                  <Image
+                    src="/assets/icons/whatsapp.svg"
+                    alt="Whatsapp Keepify"
+                    width={32}
+                    height={32}
+                  />
+                </a>
+              </div>
             </div>
           </div>
         </div>
