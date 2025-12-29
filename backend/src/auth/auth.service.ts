@@ -5,13 +5,13 @@ import {
   UnauthorizedException,
   InternalServerErrorException,
 } from '@nestjs/common';
-import { UsersService } from '../users/users.service'; // Sesuaikan path jika perlu
+import { UsersService } from '../users/users.service';
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
 import * as bcrypt from 'bcryptjs';
 import { RegisterUserDto } from './dto/register-user.dto';
 import { LoginUserDto } from './dto/login-user.dto';
-import { User } from '../users/entities/user.entity'; // Sesuaikan path jika perlu
+import { User } from '../users/entities/user.entity';
 
 @Injectable()
 export class AuthService {
@@ -21,41 +21,34 @@ export class AuthService {
     private configService: ConfigService,
   ) {}
 
-  /**
-   * Registers a new user.
-   * @param registerUserDto - Data for user registration.
-   * @returns The created user object (without password).
-   * @throws ConflictException if email already exists.
-   * @throws InternalServerErrorException if user creation fails for other reasons.
-   */
   async register(
     registerUserDto: RegisterUserDto,
   ): Promise<Omit<User, 'password'>> {
-    const { email, password, firstName, lastName, phone, address } =
-      registerUserDto;
+    const { email, password, firstName, lastName, phone, address } = registerUserDto;
 
-    const existingUser = await this.usersService.findByEmail(email);
+    // 1. PAKSA LOWERCASE SAAT REGISTER (PENTING DI LINUX)
+    const emailLower = email.toLowerCase(); // <--- PERUBAHAN 1
+
+    const existingUser = await this.usersService.findByEmail(emailLower); // Gunakan emailLower
     if (existingUser) {
       throw new ConflictException('Email sudah terdaftar');
     }
 
-    const saltRounds = 10; 
+    const saltRounds = 10;
     const hashedPassword = await bcrypt.hash(password, saltRounds);
 
     try {
-      // Asumsi UsersService.create menerima objek yang sesuai dengan field User entity
-      // Role dan isActive akan menggunakan nilai default dari entity/skema DB
       const newUser = await this.usersService.create({
-        email,
+        email: emailLower, // <--- PERUBAHAN 2: Simpan versi lowercase ke DB
         password: hashedPassword,
         firstName,
         lastName,
-        phone: phone, // Pass directly; if phone is undefined, it remains undefined
-        address: address, // Pass directly; if address is undefined, it remains undefined
+        phone: phone,
+        address: address,
       });
 
       // eslint-disable-next-line @typescript-eslint/no-unused-vars
-      const { password: _, ...result } = newUser; // Exclude password from the returned object [cite: 4]
+      const { password: _, ...result } = newUser;
       return result;
     } catch (error) {
       throw new InternalServerErrorException(
@@ -64,46 +57,47 @@ export class AuthService {
     }
   }
 
-  /**
-   * Logs in a user.
-   * @param loginUserDto - Credentials for login.
-   * @returns An object containing the access token and user details (without password).
-   * @throws UnauthorizedException if credentials are invalid or account is inactive.
-   */
   async login(
     loginUserDto: LoginUserDto,
   ): Promise<{ access_token: string; user: Omit<User, 'password'> }> {
     const { email, password } = loginUserDto;
-    const user = await this.usersService.findByEmail(email);
+    
+    // 2. PAKSA LOWERCASE SAAT LOGIN (PENTING DI LINUX)
+    // Jika user mengetik 'Admin@Gmail.com', kita ubah jadi 'admin@gmail.com' agar cocok dengan DB
+    const emailLower = email.toLowerCase(); // <--- PERUBAHAN 3
+
+    console.log(`Debug Login: Mencari email '${emailLower}'`); // Tambahkan log ini
+
+    const user = await this.usersService.findByEmail(emailLower); // Gunakan emailLower
 
     if (!user) {
+      console.log('Debug Login: User tidak ditemukan di DB'); // Log error
       throw new UnauthorizedException('Email atau password salah.');
     }
 
     const isPasswordMatching = await bcrypt.compare(password, user.password);
     if (!isPasswordMatching) {
+      console.log('Debug Login: Password hash tidak cocok'); // Log error
       throw new UnauthorizedException('Email atau password salah.');
     }
 
-    // Pastikan user aktif jika ada field isActive [cite: 4, 30]
-    if (user.hasOwnProperty('isActive') && !user.isActive) { 
-        throw new UnauthorizedException('Akun Anda tidak aktif. Silakan hubungi administrator.');
+    if (user.hasOwnProperty('isActive') && !user.isActive) {
+      throw new UnauthorizedException('Akun Anda tidak aktif.');
     }
 
     const payload = {
-      sub: user.id, 
+      sub: user.id,
       email: user.email,
-      role: user.role, 
+      role: user.role,
     };
 
     const accessToken = await this.jwtService.signAsync(payload, {
       secret: this.configService.get<string>('JWT_SECRET'),
-      // Provide a default value if 'JWT_EXPIRES_IN' is not found or invalid
-      expiresIn: this.configService.get<string>('JWT_EXPIRES_IN') || '1h', // Default to 1 hour
+      expiresIn: this.configService.get<string>('JWT_EXPIRES_IN') || '1h',
     });
 
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    const { password: _, ...userResult } = user; // Exclude password [cite: 4]
+    const { password: _, ...userResult } = user;
 
     return {
       access_token: accessToken,
@@ -111,12 +105,6 @@ export class AuthService {
     };
   }
 
-  /**
-   * Validates a user by ID.
-   * Typically used by JwtStrategy to fetch user details based on JWT payload.
-   * @param userId - The ID of the user to validate.
-   * @returns The user object if found, otherwise null.
-   */
   async validateUserById(userId: number): Promise<User | null> {
     return this.usersService.findById(userId);
   }
