@@ -75,6 +75,10 @@ const entrustedItemSchema = z.object({
     .string()
     .min(3, "Kondisi barang minimal 3 karakter")
     .optional(),
+  itemLength: z.number().min(1, "Jumlah minimal 1 cm").default(1),
+  itemWidth: z.number().min(1, "Jumlah minimal 1 cm").default(1),
+  itemHeight: z.number().min(1, "Jumlah minimal 1 cm").default(1),
+  itemWeight: z.coerce.number().nonnegative().optional(),
   quantity: z.number().min(1, "Jumlah minimal 1").default(1),
   brand: z.string().max(100).optional(),
   model: z.string().max(100).optional(),
@@ -146,6 +150,10 @@ export default function NewEntrustmentOrderPage() {
           category: "",
           estimatedValue: undefined,
           itemCondition: "",
+          itemLength: 1,
+          itemHeight: 1,
+          itemWidth: 1,
+          itemWeight: undefined,
           quantity: 1,
         },
       ],
@@ -199,6 +207,10 @@ export default function NewEntrustmentOrderPage() {
       category: "",
       estimatedValue: undefined,
       itemCondition: "",
+      itemLength: 1,
+      itemHeight: 1,
+      itemWidth: 1,
+      itemWeight: undefined,
       quantity: 1,
     });
   };
@@ -551,6 +563,50 @@ export default function NewEntrustmentOrderPage() {
                           {...register(`entrustedItems.${index}.itemCondition`)}
                           className="w-full px-3 py-2 bg-slate-700/50 border border-slate-600 rounded-lg focus:ring-2 focus:ring-sky-500 focus:border-sky-500 transition-colors placeholder-slate-500"
                           placeholder="Baru, Bekas, dll"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-slate-300 mb-1.5">
+                          Panjang
+                        </label>
+                        <input
+                          type="text"
+                          {...register(`entrustedItems.${index}.itemLength`)}
+                          className="w-full px-3 py-2 bg-slate-700/50 border border-slate-600 rounded-lg focus:ring-2 focus:ring-sky-500 focus:border-sky-500 transition-colors placeholder-slate-500"
+                          placeholder="cm"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-slate-300 mb-1.5">
+                          Lebar
+                        </label>
+                        <input
+                          type="text"
+                          {...register(`entrustedItems.${index}.itemWidth`)}
+                          className="w-full px-3 py-2 bg-slate-700/50 border border-slate-600 rounded-lg focus:ring-2 focus:ring-sky-500 focus:border-sky-500 transition-colors placeholder-slate-500"
+                          placeholder="cm"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-slate-300 mb-1.5">
+                          Tinggi
+                        </label>
+                        <input
+                          type="text"
+                          {...register(`entrustedItems.${index}.itemHeight`)}
+                          className="w-full px-3 py-2 bg-slate-700/50 border border-slate-600 rounded-lg focus:ring-2 focus:ring-sky-500 focus:border-sky-500 transition-colors placeholder-slate-500"
+                          placeholder="cm"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-slate-300 mb-1.5">
+                          Berat
+                        </label>
+                        <input
+                          type="text"
+                          {...register(`entrustedItems.${index}.itemWeight`)}
+                          className="w-full px-3 py-2 bg-slate-700/50 border border-slate-600 rounded-lg focus:ring-2 focus:ring-sky-500 focus:border-sky-500 transition-colors placeholder-slate-500"
+                          placeholder="cm"
                         />
                       </div>
                     </div>
