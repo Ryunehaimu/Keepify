@@ -35,26 +35,41 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   useEffect(() => {
     const loadUserFromToken = async () => {
       console.log('AuthContext Effect: Attempting to load user from token...');
-      const storedToken = localStorage.getItem('keepify_token');
-      if (storedToken) {
-        console.log('AuthContext Effect: Token found in localStorage:', storedToken);
-        setToken(storedToken);
+      
+      // --- PERBAIKAN UTAMA DI SINI ---
+      // Kita cek dulu apakah 'window' ada, dan apakah 'localStorage' benar-benar tersedia
+      if (typeof window !== 'undefined' && window.localStorage) {
+        
+        // Gunakan try-catch saat mengakses localStorage untuk menghindari crash jika objeknya corrupt
         try {
-          const profileResponse = await apiClient.getProfile();
-          console.log('AuthContext Effect: Profile loaded:', profileResponse);
-          setUser(profileResponse.user || profileResponse);
-        } catch (error) {
-          console.error("AuthContext Effect: Failed to load user from token, removing token.", error);
-          localStorage.removeItem('keepify_token');
-          setToken(null);
-          setUser(null);
+            const storedToken = localStorage.getItem('keepify_token');
+            
+            if (storedToken) {
+                console.log('AuthContext Effect: Token found:', storedToken);
+                setToken(storedToken);
+                try {
+                  const profileResponse = await apiClient.getProfile();
+                  console.log('AuthContext Effect: Profile loaded:', profileResponse);
+                  setUser(profileResponse.user || profileResponse);
+                } catch (error) {
+                  console.error("AuthContext Effect: Failed to load user, cleaning up.", error);
+                  localStorage.removeItem('keepify_token');
+                  setToken(null);
+                  setUser(null);
+                }
+            } else {
+                console.log('AuthContext Effect: No token found in localStorage.');
+            }
+        } catch (e) {
+            console.error("Critical: LocalStorage access failed on client", e);
         }
-      } else {
-        console.log('AuthContext Effect: No token found in localStorage.');
       }
+      // -------------------------------
+
       setIsLoading(false);
       console.log('AuthContext Effect: Finished loading, isLoading set to false.');
     };
+    
     loadUserFromToken();
   }, []);
 

@@ -1,174 +1,177 @@
-import axios, { AxiosInstance, AxiosRequestConfig, AxiosResponse } from 'axios'; // Ditambahkan AxiosRequestConfig dan AxiosResponse untuk tipe yang lebih eksplisit jika diperlukan, meskipun tidak secara langsung digunakan di implementasi bawah
+import axios, { AxiosInstance, AxiosRequestConfig } from 'axios';
 import { EntrustmentOrder } from '@/type';
+
 interface AdminDashboardSummary {
   totalUsers: number;
   totalOrders: number;
   totalItems: number;
-  // Tambahkan properti lain yang relevan jika ada
 }
+
 class ApiClient {
-  updateOrderStatus(id: any, arg1: { status: any; }) {
-    throw new Error("Method not implemented.");
-  }
   private api: AxiosInstance;
 
   constructor() {
     this.api = axios.create({
-      baseURL: process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001', // [cite: 56]
+      // Pastikan menggunakan NEXT_PUBLIC_ agar terbaca di browser
+      baseURL: process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001',
+      headers: {
+        'Content-Type': 'application/json',
+      },
     });
-    this.setupInterceptors(); // [cite: 56]
+
+    this.setupInterceptors();
   }
 
   private setupInterceptors() {
-    // Request interceptor
+    // 
+    
+    // --- REQUEST INTERCEPTOR ---
     this.api.interceptors.request.use(
-      (config) => { // Mengubah parameter menjadi config saja agar sesuai dengan penggunaan
-        const token = localStorage.getItem('keepify_token'); // [cite: 57]
-        if (token) {
-          config.headers.Authorization = `Bearer ${token}`; // [cite: 57]
+      (config) => {
+        // ✅ PENGAMAN 1: Cek apakah kita sedang di Browser (bukan Server)
+        if (typeof window !== 'undefined') {
+          try {
+            // ✅ PENGAMAN 2: Cek apakah localStorage valid (anti-crash di Linux)
+            if (window.localStorage && typeof window.localStorage.getItem === 'function') {
+              const token = localStorage.getItem('keepify_token');
+              if (token) {
+                config.headers.Authorization = `Bearer ${token}`;
+              }
+            }
+          } catch (error) {
+            // Jika error terjadi di localStorage, diamkan saja (jangan crash)
+            console.warn('LocalStorage access failed safely in interceptor');
+          }
         }
-        return config; // [cite: 57]
+        return config;
       },
       (error) => {
-        return Promise.reject(error); // [cite: 57]
+        return Promise.reject(error);
       }
     );
 
-    // Response interceptor
+    // --- RESPONSE INTERCEPTOR ---
     this.api.interceptors.response.use(
-      (response) => response, // [cite: 58]
+      (response) => response,
       (error) => {
-        if (error.response?.status === 401) { // [cite: 58]
-          localStorage.removeItem('keepify_token'); // [cite: 58]
-          window.location.href = '/login'; // [cite: 58]
+        // Cek Unauthorized (401)
+        if (error.response?.status === 401) {
+          // Hanya lakukan redirect jika di Browser
+          if (typeof window !== 'undefined') {
+            try {
+              if (window.localStorage && typeof window.localStorage.removeItem === 'function') {
+                localStorage.removeItem('keepify_token');
+              }
+              if (window.location) {
+                window.location.href = '/login';
+              }
+            } catch (e) {
+              console.error('Logout redirect failed safely', e);
+            }
+          }
         }
-        return Promise.reject(error); // [cite: 58]
+        return Promise.reject(error);
       }
     );
   }
 
-  // Auth methods
+  // --- AUTH METHODS ---
   async login(email: string, password: string) {
-    const response = await this.api.post('/auth/login', { email, password }); // Perbaikan: destrukturisasi email dan password [cite: 59, 60]
-    return response.data; // [cite: 60]
-  }
-
-  async register(userData: any) { //
-    const response = await this.api.post('/auth/register', userData); // [cite: 60]
-    return response.data; // [cite: 60]
-  }
-
-  async getProfile() {
-    const response = await this.api.get('/auth/profile'); // [cite: 61]
-    return response.data; // [cite: 61]
-  }
-
-  async getMyDashboardSummary(): Promise<any> { // Ganti any dengan tipe data summary
-    const response = await this.api.get('/items/summary/my-summary'); // Sesuaikan dengan endpoint backend Anda
+    const response = await this.api.post('/auth/login', { email, password });
     return response.data;
   }
 
-  // Storage items methods
-  async getMyItems() {
-    const response = await this.api.get('/items/my-items'); // [cite: 61]
-    return response.data; // [cite: 61]
+  async register(userData: any) {
+    const response = await this.api.post('/auth/register', userData);
+    return response.data;
   }
 
-  async createStorageItem(data: FormData) { // Ubah tipe 'any' menjadi FormData
+  async getProfile() {
+    const response = await this.api.get('/auth/profile');
+    return response.data;
+  }
+
+  // --- DASHBOARD METHODS ---
+  async getMyDashboardSummary(): Promise<any> {
+    const response = await this.api.get('/items/summary/my-summary');
+    return response.data;
+  }
+
+  // --- ITEM/STORAGE METHODS ---
+  async getMyItems() {
+    const response = await this.api.get('/items/my-items');
+    return response.data;
+  }
+
+  async createStorageItem(data: FormData) {
     const response = await this.api.post('/items', data, {
       headers: {
-        'Content-Type': 'multipart/form-data', // Tambahkan header di sini
+        'Content-Type': 'multipart/form-data',
       },
     });
     return response.data;
   }
 
-  // NEW: Create entrustment order method
+  async getStorageItem(id: number) {
+    const response = await this.api.get(`/items/${id}`);
+    return response.data;
+  }
+
+  // --- ENTRUSTMENT ORDER (Complex Logic) ---
   async createEntrustmentOrder(formData: FormData) {
     try {
       console.log('Creating entrustment order...');
-
-      // Log FormData contents for debugging
-      for (let [key, value] of formData.entries()) {
-        console.log(`FormData ${key}:`, value);
-      }
-
       const response = await this.api.post('/items', formData, {
         headers: {
           'Content-Type': 'multipart/form-data',
         },
       });
-
-      console.log('Entrustment order created successfully:', response.data);
       return response.data;
     } catch (error: any) {
       console.error('Create entrustment order error:', error);
-
-      // Enhanced error handling
       if (error.response) {
-        // Server responded with error status
-        const status = error.response.status;
-        const message = error.response.data?.message || 'Failed to create entrustment order';
-        const details = error.response.data?.details || '';
-
-        console.error('Server error response:', {
-          status,
-          message,
-          details,
-          data: error.response.data
-        });
-
-        throw new Error(`Error ${status}: ${message}${details ? ' - ' + details : ''}`);
+        throw new Error(`Error ${error.response.status}: ${error.response.data?.message || 'Failed'}`);
       } else if (error.request) {
-        // Request was made but no response received
-        console.error('No response received:', error.request);
-        throw new Error('Server tidak merespons. Periksa koneksi network dan pastikan backend server berjalan.');
+        throw new Error('Server tidak merespons. Cek koneksi backend.');
       } else {
-        // Something else happened
-        console.error('Request setup error:', error.message);
-        throw new Error('Terjadi kesalahan saat membuat request: ' + error.message);
+        throw new Error(error.message);
       }
     }
   }
 
-  async getStorageItem(id: number) {
-    const response = await this.api.get(`/items/${id}`); // [cite: 62]
-    return response.data; // [cite: 63]
-  }
-
+  // --- UTILITY METHODS ---
   public async post(url: string, data?: any, config?: AxiosRequestConfig): Promise<any> {
     const response = await this.api.post(url, data, config);
     return response.data;
   }
 
-  // Metode get generik juga bisa berguna
   public async get(url: string, config?: AxiosRequestConfig): Promise<any> {
     const response = await this.api.get(url, config);
     return response.data;
   }
 
-  // Admin methods
+  // --- ADMIN METHODS ---
   async getPendingPickups() {
-    const response = await this.api.get('/admin/pending-pickups'); // [cite: 63]
-    return response.data; // [cite: 63]
+    const response = await this.api.get('/admin/pending-pickups');
+    return response.data;
   }
+
   async getAdminDashboardSummary(): Promise<AdminDashboardSummary> {
     const response = await this.api.get('/admin/dashboard/summary');
     return response.data;
   }
+
   async getMonitoringSchedule() {
-    const response = await this.api.get('/admin/monitoring-schedule'); // [cite: 63]
-    return response.data; // [cite: 63]
+    const response = await this.api.get('/admin/monitoring-schedule');
+    return response.data;
   }
+
   async getOrdersByStatus(status: string): Promise<EntrustmentOrder[]> {
     const response = await this.api.get('/admin/orders', { params: { status } });
     return response.data;
   }
 
-  async adminUpdateStatus(
-    orderId: number,
-    body: { status: string }
-  ): Promise<EntrustmentOrder> {
+  async adminUpdateStatus(orderId: number, body: { status: string }): Promise<EntrustmentOrder> {
     const response = await this.api.post(`/admin/orders/${orderId}/update-status`, body);
     return response.data;
   }
@@ -177,20 +180,26 @@ class ApiClient {
     const response = await this.api.post(`/admin/orders/${orderId}/complete-pickup`, data);
     return response.data;
   }
-  // File upload
-  async uploadFile(file: File, path: string) { // [cite: 64]
-    const formData = new FormData(); // [cite: 64]
-    formData.append('file', file); // [cite: 65]
-    formData.append('path', path); // [cite: 65]
 
-    const response = await this.api.post('/uploads', formData, { // [cite: 65]
+  async uploadFile(file: File, path: string) {
+    const formData = new FormData();
+    formData.append('file', file);
+    formData.append('path', path);
+
+    const response = await this.api.post('/uploads', formData, {
       headers: {
-        'Content-Type': 'multipart/form-data', // [cite: 65]
+        'Content-Type': 'multipart/form-data',
       },
     });
-    return response.data; // [cite: 65]
+    return response.data;
   }
 
+  // Placeholder untuk method yang belum diimplementasi
+  updateOrderStatus(id: any, arg1: { status: any }) {
+    console.warn('Method updateOrderStatus is deprecated or not implemented, use adminUpdateStatus instead.');
+    // Fallback ke method adminUpdateStatus jika memungkinkan
+    return this.adminUpdateStatus(id, arg1);
+  }
 }
 
-export const apiClient = new ApiClient(); // [cite: 65]
+export const apiClient = new ApiClient();
