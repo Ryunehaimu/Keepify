@@ -80,6 +80,9 @@ export class EntrustmentOrder {
   })
   entrustedItems: EntrustedItem[];
 
+  @Column({ type: 'decimal', precision: 12, scale: 2, default: 0 })
+  totalPrice: number;
+
   // Relationship to User (Owner)
   @ManyToOne(() => User, user => user.entrustmentOrders, {
     onDelete: 'CASCADE', // When user is deleted, orders are also deleted

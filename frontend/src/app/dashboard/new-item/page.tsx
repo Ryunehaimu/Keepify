@@ -1,4 +1,3 @@
-// src/app/dashboard/new-item/page.tsx
 "use client";
 
 import React, { useState, useEffect } from "react";
@@ -18,108 +17,93 @@ import {
   Clock,
   MapPin,
   Phone,
+  DollarSign,
+  Maximize,
+  Weight,
 } from "lucide-react";
 
-// Enum types (should match backend)
+// Enum types (match backend)
 enum MonitoringFrequency {
   NONE = "none",
   WEEKLY_ONCE = "weekly_once",
   WEEKLY_TWICE = "weekly_twice",
 }
 
+// Fungsi hitung estimasi live
+const calculateLiveEstimate = (items: any[], frequency: string, pickupDate: string, retrievalDate?: string) => {
+  const PRICE_PER_KG_PER_DAY = 2000;
+  const MONITORING_FEE: Record<string, number> = {
+    none: 0,
+    weekly_once: 5000,
+    weekly_twice: 10000
+  };
+
+  const start = new Date(pickupDate);
+  if (isNaN(start.getTime())) return 0;
+
+  // Default simulasi 7 hari jika tgl pengambilan kosong
+  const end = retrievalDate ? new Date(retrievalDate) : new Date(start.getTime() + 7 * 86400000);
+  const diffDays = Math.ceil(Math.abs(end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24)) || 1;
+
+  return items.reduce((total, item) => {
+    const weight = Number(item.itemWeight) || 0;
+    const length = Number(item.itemLength) || 0;
+    const width = Number(item.itemWidth) || 0;
+    const height = Number(item.itemHeight) || 0;
+    
+    // Logika Volumetrik: (P x L x T) / 6000
+    const volumeWeight = (length * width * height) / 6000;
+    const finalWeight = Math.max(weight, volumeWeight);
+    
+    const monitoringPrice = MONITORING_FEE[frequency] || 0;
+    const itemBasePrice = (finalWeight * PRICE_PER_KG_PER_DAY * diffDays);
+    const itemTotal = (itemBasePrice + monitoringPrice) * (Number(item.quantity) || 1);
+    
+    return total + itemTotal;
+  }, 0);
+};
+
 // Individual item schema
 const entrustedItemSchema = z.object({
-  name: z
-    .string()
-    .min(3, "Nama barang minimal 3 karakter")
-    .max(255, "Nama barang maksimal 255 karakter"),
-  description: z
-    .string()
-    .min(10, "Deskripsi minimal 10 karakter")
-    .max(500, "Deskripsi maksimal 500 karakter")
-    .optional(),
-  category: z
-    .string()
-    .min(1, "Kategori harus diisi")
-    .max(100, "Kategori maksimal 100 karakter")
-    .optional(),
-  estimatedValue: z
-    .unknown()
-    .transform((val, ctx) => {
-      if (
-        val === undefined ||
-        val === null ||
-        (typeof val === "string" && val.trim() === "")
-      ) {
-        return undefined;
-      }
-      const num = Number(val);
-      if (isNaN(num)) {
-        ctx.addIssue({
-          code: z.ZodIssueCode.custom,
-          message: "Estimasi nilai harus berupa angka atau dikosongkan.",
-        });
-        return z.NEVER;
-      }
-      if (num <= 0) {
-        ctx.addIssue({
-          code: z.ZodIssueCode.custom,
-          message: "Estimasi nilai harus lebih dari 0 jika diisi.",
-        });
-        return z.NEVER;
-      }
-      return num.toString(); // Backend expects string
-    })
-    .optional(),
-  itemCondition: z
-    .string()
-    .min(3, "Kondisi barang minimal 3 karakter")
-    .optional(),
-  itemLength: z.number().min(1, "Jumlah minimal 1 cm").default(1),
-  itemWidth: z.number().min(1, "Jumlah minimal 1 cm").default(1),
-  itemHeight: z.number().min(1, "Jumlah minimal 1 cm").default(1),
-  itemWeight: z.coerce.number().nonnegative().optional(),
-  quantity: z.number().min(1, "Jumlah minimal 1").default(1),
+  name: z.string().min(3, "Nama barang minimal 3 karakter").max(255),
+  description: z.string().min(10, "Deskripsi minimal 10 karakter").max(500).optional(),
+  category: z.string().min(1, "Kategori harus diisi").max(100).optional(),
+  estimatedValue: z.unknown().transform((val, ctx) => {
+    if (val === undefined || val === null || (typeof val === "string" && val.trim() === "")) return undefined;
+    const num = Number(val);
+    if (isNaN(num) || num <= 0) {
+      ctx.addIssue({ code: z.ZodIssueCode.custom, message: "Nilai harus berupa angka > 0" });
+      return z.NEVER;
+    }
+    return num.toString();
+  }).optional(),
+  itemCondition: z.string().min(3, "Kondisi minimal 3 karakter").optional(),
+  itemLength: z.coerce.number().min(1, "Minimal 1 cm").default(1),
+  itemWidth: z.coerce.number().min(1, "Minimal 1 cm").default(1),
+  itemHeight: z.coerce.number().min(1, "Minimal 1 cm").default(1),
+  itemWeight: z.preprocess(
+    (val) => (val === "" || val === undefined ? undefined : Number(val)),
+    z.number().nonnegative().optional()
+  ),
+  quantity: z.coerce.number().min(1, "Jumlah minimal 1").default(1),
   brand: z.string().max(100).optional(),
   model: z.string().max(100).optional(),
   color: z.string().max(50).optional(),
   specialInstructions: z.string().max(500).optional(),
 });
 
-// Main entrustment order schema
-const entrustmentOrderSchema = z
-  .object({
-    allowChecks: z.boolean().default(true),
-    monitoringFrequency: z.nativeEnum(MonitoringFrequency).optional(),
-    pickupRequestedDate: z
-      .string()
-      .min(1, "Tanggal dan jam penjemputan harus diisi"),
-    pickupAddress: z
-      .string()
-      .min(10, "Alamat penjemputan minimal 10 karakter")
-      .max(500, "Alamat maksimal 500 karakter"),
-    contactPhone: z
-      .string()
-      .min(10, "Nomor telepon minimal 10 digit")
-      .max(20, "Nomor telepon maksimal 20 karakter"),
-    expectedRetrievalDate: z.string().optional(),
-    entrustedItems: z
-      .array(entrustedItemSchema)
-      .min(1, "Harus ada minimal satu barang yang dititipkan"),
-  })
-  .refine(
-    (data) => {
-      // If allowChecks is true, monitoringFrequency should be provided
-      if (data.allowChecks && !data.monitoringFrequency) {
-        return false;
-      }
-      return true;
-    },
-    {
-      message: "Pilih frekuensi monitoring jika mengizinkan pemeriksaan barang",
-      path: ["monitoringFrequency"],
-    }
-  );
+const entrustmentOrderSchema = z.object({
+  allowChecks: z.boolean().default(true),
+  monitoringFrequency: z.nativeEnum(MonitoringFrequency).optional(),
+  pickupRequestedDate: z.string().min(1, "Tanggal dan jam penjemputan harus diisi"),
+  pickupAddress: z.string().min(10, "Alamat minimal 10 karakter").max(500),
+  contactPhone: z.string().min(10, "Minimal 10 digit").max(20),
+  expectedRetrievalDate: z.string().optional(),
+  entrustedItems: z.array(entrustedItemSchema).min(1, "Harus ada minimal satu barang"),
+}).refine((data) => !data.allowChecks || data.monitoringFrequency, {
+  message: "Pilih frekuensi monitoring jika mengizinkan pemeriksaan",
+  path: ["monitoringFrequency"],
+});
 
 type EntrustmentOrderFormData = z.infer<typeof entrustmentOrderSchema>;
 
@@ -131,167 +115,61 @@ export default function NewEntrustmentOrderPage() {
   const [packageImage, setPackageImage] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
 
-  const {
-    register,
-    handleSubmit,
-    formState: { errors },
-    reset,
-    control,
-    watch,
-  } = useForm<EntrustmentOrderFormData>({
+  const { register, handleSubmit, formState: { errors }, reset, control, watch } = useForm<EntrustmentOrderFormData>({
     resolver: zodResolver(entrustmentOrderSchema),
     defaultValues: {
       allowChecks: true,
       monitoringFrequency: MonitoringFrequency.NONE,
-      entrustedItems: [
-        {
-          name: "",
-          description: "",
-          category: "",
-          estimatedValue: undefined,
-          itemCondition: "",
-          itemLength: 1,
-          itemHeight: 1,
-          itemWidth: 1,
-          itemWeight: undefined,
-          quantity: 1,
-        },
-      ],
+      entrustedItems: [{ name: "", itemLength: 1, itemHeight: 1, itemWidth: 1, quantity: 1 }],
     },
   });
 
-  const { fields, append, remove } = useFieldArray({
-    control,
-    name: "entrustedItems",
-  });
-
+  const { fields, append, remove } = useFieldArray({ control, name: "entrustedItems" });
+  
+  const watchedItems = watch("entrustedItems");
+  const watchedFreq = watch("monitoringFrequency") || "none";
+  const watchedPickup = watch("pickupRequestedDate");
+  const watchedRetrieval = watch("expectedRetrievalDate");
   const allowChecks = watch("allowChecks");
 
+  const currentEstimate = calculateLiveEstimate(watchedItems, watchedFreq, watchedPickup, watchedRetrieval);
+
   useEffect(() => {
-    if (!authIsLoading && !isAuthenticated) {
-      router.push("/login?message=Silakan login untuk menitipkan barang");
-    }
+    if (!authIsLoading && !isAuthenticated) router.push("/login?message=Silakan login");
   }, [authIsLoading, isAuthenticated, router]);
 
   const handleImageChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     if (event.target.files && event.target.files[0]) {
       const file = event.target.files[0];
-      if (file.size > 5 * 1024 * 1024) {
-        setServerError("Ukuran file gambar tidak boleh melebihi 5MB.");
-        setPackageImage(null);
-        setImagePreview(null);
-        if (event.target) event.target.value = "";
-        return;
-      }
-      const allowedTypes = ["image/png", "image/jpeg", "image/webp"];
-      if (!allowedTypes.includes(file.type)) {
-        setServerError("Tipe file gambar hanya boleh PNG, JPG, atau WEBP.");
-        setPackageImage(null);
-        setImagePreview(null);
-        if (event.target) event.target.value = "";
-        return;
-      }
       setPackageImage(file);
       setImagePreview(URL.createObjectURL(file));
-      setServerError(null);
-    } else {
-      setPackageImage(null);
-      setImagePreview(null);
-    }
-  };
-
-  const addItem = () => {
-    append({
-      name: "",
-      description: "",
-      category: "",
-      estimatedValue: undefined,
-      itemCondition: "",
-      itemLength: 1,
-      itemHeight: 1,
-      itemWidth: 1,
-      itemWeight: undefined,
-      quantity: 1,
-    });
-  };
-
-  const removeItem = (index: number) => {
-    if (fields.length > 1) {
-      remove(index);
     }
   };
 
   const onSubmit: SubmitHandler<EntrustmentOrderFormData> = async (data) => {
-    if (!token) {
-      setServerError("Autentikasi gagal. Silakan login kembali.");
-      return;
-    }
+    if (!token) return;
     setIsSubmitting(true);
-    setServerError(null);
-
     try {
       const formData = new FormData();
-
-      // Add main order data
       formData.append("allowChecks", data.allowChecks.toString());
-      formData.append(
-        "monitoringFrequency",
-        data.allowChecks
-          ? data.monitoringFrequency || MonitoringFrequency.NONE
-          : MonitoringFrequency.NONE
-      );
+      formData.append("monitoringFrequency", data.allowChecks ? data.monitoringFrequency || MonitoringFrequency.NONE : MonitoringFrequency.NONE);
       formData.append("pickupRequestedDate", data.pickupRequestedDate);
       formData.append("pickupAddress", data.pickupAddress);
       formData.append("contactPhone", data.contactPhone);
-
-      if (data.expectedRetrievalDate) {
-        formData.append("expectedRetrievalDate", data.expectedRetrievalDate);
-      }
-
-      // Add items data as JSON string
+      if (data.expectedRetrievalDate) formData.append("expectedRetrievalDate", data.expectedRetrievalDate);
       formData.append("entrustedItems", JSON.stringify(data.entrustedItems));
-
-      // Add package image if exists
-      if (packageImage) {
-        formData.append("image", packageImage); // Backend expects 'image' field name
-      }
+      if (packageImage) formData.append("image", packageImage);
 
       await apiClient.createEntrustmentOrder(formData);
-      alert("Order penitipan berhasil dibuat!");
-      reset();
-      setImagePreview(null);
-      setPackageImage(null);
-      const fileInput = document.getElementById(
-        "packageImageInput"
-      ) as HTMLInputElement;
-      if (fileInput) fileInput.value = "";
       router.push("/dashboard/my-items");
     } catch (error: any) {
-      console.error("Error creating entrustment order:", error);
-      const errorMessage =
-        error.response?.data?.message ||
-        error.message ||
-        "Gagal membuat order penitipan. Silakan coba lagi.";
-      setServerError(errorMessage);
+      setServerError(error.response?.data?.message || "Gagal membuat order.");
     } finally {
       setIsSubmitting(false);
     }
   };
 
-  if (authIsLoading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-slate-900 text-white">
-        Loading...
-      </div>
-    );
-  }
-  if (!isAuthenticated) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-slate-900 text-white">
-        Mengalihkan ke halaman login...
-      </div>
-    );
-  }
+  if (authIsLoading) return <div className="min-h-screen flex items-center justify-center bg-slate-900 text-white">Loading...</div>;
 
   return (
     <div className="min-h-screen bg-slate-900 text-white p-4 sm:p-8">
@@ -299,428 +177,120 @@ export default function NewEntrustmentOrderPage() {
         <div className="bg-slate-800 p-6 sm:p-8 rounded-lg shadow-2xl">
           <div className="flex items-center mb-6 border-b border-slate-700 pb-4">
             <PackagePlus size={28} className="text-sky-400 mr-3" />
-            <h1 className="text-2xl sm:text-3xl font-bold text-sky-400">
-              Formulir Penitipan Barang
-            </h1>
+            <h1 className="text-2xl sm:text-3xl font-bold text-sky-400">Formulir Penitipan Barang</h1>
           </div>
 
-          {serverError && (
-            <div
-              className="bg-red-500/20 border border-red-600 text-red-200 px-4 py-3 rounded-lg mb-6"
-              role="alert"
-            >
-              <strong className="font-bold">Terjadi Kesalahan: </strong>
-              <span className="block sm:inline">{serverError}</span>
-            </div>
-          )}
-
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-8">
-            {/* Pickup Information Section */}
+            {/* 1. Pickup Information */}
             <div className="bg-slate-700/30 p-6 rounded-lg">
-              <div className="flex items-center mb-4">
-                <MapPin size={24} className="text-emerald-400 mr-2" />
-                <h2 className="text-xl font-semibold text-emerald-400">
-                  Informasi Penjemputan
-                </h2>
-              </div>
-
+              <div className="flex items-center mb-4 text-emerald-400"><MapPin size={24} className="mr-2" /> <h2 className="text-xl font-semibold">Informasi Penjemputan</h2></div>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
-                  <label
-                    htmlFor="pickupRequestedDate"
-                    className="block text-sm font-medium text-slate-300 mb-1.5"
-                  >
-                    Tanggal & Jam Penjemputan{" "}
-                    <span className="text-red-400">*</span>
-                  </label>
-                  <input
-                    id="pickupRequestedDate"
-                    type="datetime-local"
-                    {...register("pickupRequestedDate")}
-                    className="w-full px-4 py-2.5 bg-slate-700/50 border border-slate-600 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-colors"
-                  />
-                  {errors.pickupRequestedDate && (
-                    <p className="text-red-400 text-xs mt-1.5">
-                      {errors.pickupRequestedDate.message}
-                    </p>
-                  )}
+                  <label className="block text-sm font-medium text-slate-300 mb-1.5">Tanggal & Jam Penjemputan *</label>
+                  <input type="datetime-local" {...register("pickupRequestedDate")} className="w-full px-4 py-2.5 bg-slate-700/50 border border-slate-600 rounded-lg" />
+                  {errors.pickupRequestedDate && <p className="text-red-400 text-xs mt-1.5">{errors.pickupRequestedDate.message}</p>}
                 </div>
-
                 <div>
-                  <label
-                    htmlFor="contactPhone"
-                    className="block text-sm font-medium text-slate-300 mb-1.5"
-                  >
-                    Nomor Telepon <span className="text-red-400">*</span>
-                  </label>
-                  <input
-                    id="contactPhone"
-                    type="tel"
-                    {...register("contactPhone")}
-                    className="w-full px-4 py-2.5 bg-slate-700/50 border border-slate-600 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-colors placeholder-slate-500"
-                    placeholder="08123456789"
-                  />
-                  {errors.contactPhone && (
-                    <p className="text-red-400 text-xs mt-1.5">
-                      {errors.contactPhone.message}
-                    </p>
-                  )}
+                  <label className="block text-sm font-medium text-slate-300 mb-1.5">Nomor Telepon *</label>
+                  <input type="tel" {...register("contactPhone")} className="w-full px-4 py-2.5 bg-slate-700/50 border border-slate-600 rounded-lg" placeholder="08..." />
                 </div>
               </div>
-
               <div className="mt-6">
-                <label
-                  htmlFor="pickupAddress"
-                  className="block text-sm font-medium text-slate-300 mb-1.5"
-                >
-                  Alamat Penjemputan <span className="text-red-400">*</span>
-                </label>
-                <textarea
-                  id="pickupAddress"
-                  {...register("pickupAddress")}
-                  rows={3}
-                  className="w-full px-4 py-2.5 bg-slate-700/50 border border-slate-600 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-colors placeholder-slate-500"
-                  placeholder="Alamat lengkap untuk penjemputan barang"
-                />
-                {errors.pickupAddress && (
-                  <p className="text-red-400 text-xs mt-1.5">
-                    {errors.pickupAddress.message}
-                  </p>
-                )}
+                <label className="block text-sm font-medium text-slate-300 mb-1.5">Alamat Penjemputan *</label>
+                <textarea {...register("pickupAddress")} rows={3} className="w-full px-4 py-2.5 bg-slate-700/50 border border-slate-600 rounded-lg" placeholder="Alamat lengkap..." />
               </div>
-
               <div className="mt-6">
-                <label
-                  htmlFor="expectedRetrievalDate"
-                  className="block text-sm font-medium text-slate-300 mb-1.5"
-                >
-                  Perkiraan Tanggal Pengambilan{" "}
-                  <span className="text-xs text-slate-400">(Opsional)</span>
-                </label>
-                <input
-                  id="expectedRetrievalDate"
-                  type="date"
-                  {...register("expectedRetrievalDate")}
-                  className="w-full px-4 py-2.5 bg-slate-700/50 border border-slate-600 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-colors"
-                />
-                {errors.expectedRetrievalDate && (
-                  <p className="text-red-400 text-xs mt-1.5">
-                    {errors.expectedRetrievalDate.message}
-                  </p>
-                )}
+                <label className="block text-sm font-medium text-slate-300 mb-1.5">Perkiraan Tanggal Pengambilan (Opsional)</label>
+                <input type="date" {...register("expectedRetrievalDate")} className="w-full px-4 py-2.5 bg-slate-700/50 border border-slate-600 rounded-lg" />
               </div>
             </div>
 
-            {/* Monitoring Preferences Section */}
+            {/* 2. Monitoring Preferences */}
             <div className="bg-slate-700/30 p-6 rounded-lg">
-              <div className="flex items-center mb-4">
-                <Clock size={24} className="text-purple-400 mr-2" />
-                <h2 className="text-sm md:text-xl font-semibold text-purple-400">
-                  Preferensi Monitoring
-                </h2>
-              </div>
-
+              <div className="flex items-center mb-4 text-purple-400"><Clock size={24} className="mr-2" /> <h2 className="text-xl font-semibold">Preferensi Monitoring</h2></div>
               <div className="space-y-4">
-                <div className="flex items-center">
-                  <input
-                    id="allowChecks"
-                    type="checkbox"
-                    {...register("allowChecks")}
-                    className="h-4 w-4 text-purple-600 focus:ring-purple-500 border-slate-600 rounded bg-slate-700"
-                  />
-                  <label
-                    htmlFor="allowChecks"
-                    className="ml-3 text-sm text-slate-300"
-                  >
-                    Izinkan kami memeriksa kondisi barang secara berkala
-                  </label>
+                <div className="flex items-center gap-3">
+                  <input id="allowChecks" type="checkbox" {...register("allowChecks")} className="h-4 w-4 rounded bg-slate-700 text-purple-600" />
+                  <label htmlFor="allowChecks" className="text-sm text-slate-300">Izinkan pemeriksaan berkala</label>
                 </div>
-
                 {allowChecks && (
-                  <div>
-                    <label className="block text-sm font-medium text-slate-300 mb-2">
-                      Frekuensi Monitoring{" "}
-                      <span className="text-red-400">*</span>
-                    </label>
-                    <div className="space-y-2">
-                      {Object.values(MonitoringFrequency).map((freq) => (
-                        <div key={freq} className="flex items-center">
-                          <input
-                            id={`monitoring-${freq}`}
-                            type="radio"
-                            value={freq}
-                            {...register("monitoringFrequency")}
-                            className="h-4 w-4 text-purple-600 focus:ring-purple-500 border-slate-600 bg-slate-700"
-                          />
-                          <label
-                            htmlFor={`monitoring-${freq}`}
-                            className="ml-3 text-sm text-slate-300"
-                          >
-                            {freq === "none" && "Tidak perlu monitoring"}
-                            {freq === "weekly_once" && "1 kali seminggu"}
-                            {freq === "weekly_twice" && "2 kali seminggu"}
-                          </label>
-                        </div>
-                      ))}
-                    </div>
-                    {errors.monitoringFrequency && (
-                      <p className="text-red-400 text-xs mt-1.5">
-                        {errors.monitoringFrequency.message}
-                      </p>
-                    )}
+                  <div className="pl-7 space-y-2">
+                    {Object.values(MonitoringFrequency).map((freq) => (
+                      <label key={freq} className="flex items-center text-sm text-slate-300 cursor-pointer">
+                        <input type="radio" value={freq} {...register("monitoringFrequency")} className="mr-3" />
+                        {freq === 'none' ? 'Tidak perlu' : freq.replace('_', ' ')}
+                      </label>
+                    ))}
                   </div>
                 )}
               </div>
             </div>
 
-            {/* Items Section */}
+            {/* 3. Item Details */}
             <div className="bg-slate-700/30 p-6 rounded-lg">
-              <div className="flex items-center justify-between mb-4">
-                <div className="flex items-center">
-                  <PackagePlus size={24} className="text-sky-400 mr-2" />
-                  <h2 className="text-sm md:text-xl font-semibold text-sky-400">
-                    Daftar Barang yang Dititipkan
-                  </h2>
-                </div>
-                <button
-                  type="button"
-                  onClick={addItem}
-                  className="flex items-center px-3 py-2 text-sm bg-sky-600 hover:bg-sky-700 rounded-lg transition-colors"
-                >
-                  <Plus size={16} className="mr-0 md:mr-1" />
-                  <span className="hidden md:block">Tambah Barang</span>
-                </button>
+              <div className="flex justify-between items-center mb-4">
+                <div className="flex items-center text-sky-400"><PackagePlus size={24} className="mr-2" /> <h2 className="text-xl font-semibold">Daftar Barang</h2></div>
+                <button type="button" onClick={() => append({ name: "", itemLength: 1, itemHeight: 1, itemWidth: 1, quantity: 1 })} className="flex items-center bg-sky-600 px-3 py-2 rounded-lg text-sm hover:bg-sky-700"><Plus size={16} className="mr-1" /> Tambah</button>
               </div>
 
               <div className="space-y-6">
                 {fields.map((field, index) => (
-                  <div
-                    key={field.id}
-                    className="bg-slate-600/30 p-4 rounded-lg z-10"
-                  >
-                    {fields.length > 1 && (
-                      <button
-                        type="button"
-                        onClick={() => removeItem(index)}
-                        className="absolute top-2 right-2 p-1 text-red-400 hover:text-red-300 transition-colors"
-                      >
-                        <Trash2 size={16} />
-                      </button>
-                    )}
-
-                    <h3 className="text-lg font-medium text-slate-200 mb-4">
-                      Barang {index + 1}
-                    </h3>
-
+                  <div key={field.id} className="bg-slate-600/30 p-5 rounded-lg relative">
+                    {fields.length > 1 && <button type="button" onClick={() => remove(index)} className="absolute top-3 right-3 text-red-400 hover:text-red-300"><Trash2 size={18} /></button>}
+                    <h3 className="text-sm font-bold text-slate-400 mb-4 uppercase tracking-wider">Barang {index + 1}</h3>
+                    
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="md:col-span-2">
+                        <label className="text-xs text-slate-400 mb-1 block">Nama Barang *</label>
+                        <input {...register(`entrustedItems.${index}.name`)} className="w-full bg-slate-700/50 p-2 rounded border border-slate-600" />
+                      </div>
                       <div>
-                        <label className="block text-sm font-medium text-slate-300 mb-1.5">
-                          Nama Barang <span className="text-red-400">*</span>
-                        </label>
-                        <input
-                          type="text"
-                          {...register(`entrustedItems.${index}.name`)}
-                          className="w-full px-3 py-2 bg-slate-700/50 border border-slate-600 rounded-lg focus:ring-2 focus:ring-sky-500 focus:border-sky-500 transition-colors placeholder-slate-500"
-                          placeholder="Nama barang"
-                        />
-                        {errors.entrustedItems?.[index]?.name && (
-                          <p className="text-red-400 text-xs mt-1">
-                            {errors.entrustedItems[index]?.name?.message}
-                          </p>
-                        )}
+                        <label className="text-xs text-slate-400 mb-1 block">Kategori</label>
+                        <input {...register(`entrustedItems.${index}.category`)} className="w-full bg-slate-700/50 p-2 rounded border border-slate-600" />
+                      </div>
+                      <div className="md:col-span-2">
+                        <label className="text-xs text-slate-400 mb-1 block">Deskripsi</label>
+                        <textarea {...register(`entrustedItems.${index}.description`)} rows={2} className="w-full bg-slate-700/50 p-2 rounded border border-slate-600" />
                       </div>
 
-                      <div>
-                        <label className="block text-sm font-medium text-slate-300 mb-1.5">
-                          Kategori
-                        </label>
-                        <input
-                          type="text"
-                          {...register(`entrustedItems.${index}.category`)}
-                          className="w-full px-3 py-2 bg-slate-700/50 border border-slate-600 rounded-lg focus:ring-2 focus:ring-sky-500 focus:border-sky-500 transition-colors placeholder-slate-500"
-                          placeholder="Elektronik, Dokumen, dll"
-                        />
+                      {/* Dimensi & Berat */}
+                      <div className="grid grid-cols-3 gap-3 md:col-span-1">
+                        <div><label className="text-[10px] text-slate-500 uppercase">P (cm)</label><input type="number" {...register(`entrustedItems.${index}.itemLength`)} className="w-full bg-slate-700/50 p-2 rounded border border-slate-600" /></div>
+                        <div><label className="text-[10px] text-slate-500 uppercase">L (cm)</label><input type="number" {...register(`entrustedItems.${index}.itemWidth`)} className="w-full bg-slate-700/50 p-2 rounded border border-slate-600" /></div>
+                        <div><label className="text-[10px] text-slate-500 uppercase">T (cm)</label><input type="number" {...register(`entrustedItems.${index}.itemHeight`)} className="w-full bg-slate-700/50 p-2 rounded border border-slate-600" /></div>
                       </div>
-
-                      <div className="md:col-span-2">
-                        <label className="block text-sm font-medium text-slate-300 mb-1.5">
-                          Deskripsi
-                        </label>
-                        <textarea
-                          {...register(`entrustedItems.${index}.description`)}
-                          rows={2}
-                          className="w-full px-3 py-2 bg-slate-700/50 border border-slate-600 rounded-lg focus:ring-2 focus:ring-sky-500 focus:border-sky-500 transition-colors placeholder-slate-500"
-                          placeholder="Deskripsi detail barang"
-                        />
+                      <div className="grid grid-cols-2 gap-3">
+                        <div><label className="text-xs text-slate-400 mb-1 block">Berat (kg)</label><input type="number" step="0.1" {...register(`entrustedItems.${index}.itemWeight`)} className="w-full bg-slate-700/50 p-2 rounded border border-slate-600" /></div>
+                        <div><label className="text-xs text-slate-400 mb-1 block">Qty</label><input type="number" {...register(`entrustedItems.${index}.quantity`)} className="w-full bg-slate-700/50 p-2 rounded border border-slate-600" /></div>
                       </div>
-
-                      <div className="md:col-span-2">
-                        <label className="block text-sm font-medium text-slate-300 mb-1.5">
-                          Kondisi Barang
-                        </label>
-                        <input
-                          type="text"
-                          {...register(`entrustedItems.${index}.itemCondition`)}
-                          className="w-full px-3 py-2 bg-slate-700/50 border border-slate-600 rounded-lg focus:ring-2 focus:ring-sky-500 focus:border-sky-500 transition-colors placeholder-slate-500"
-                          placeholder="Baru, Bekas, dll"
-                        />
-                      </div>
-                      <div className="md:col-span-2">
-                        <label className="block text-sm font-medium text-slate-300 mb-1.5">
-                          Berat
-                        </label>
-                        <input
-                          type="text"
-                          {...register(`entrustedItems.${index}.itemWeight`)}
-                          className="w-full px-3 py-2 bg-slate-700/50 border border-slate-600 rounded-lg focus:ring-2 focus:ring-sky-500 focus:border-sky-500 transition-colors placeholder-slate-500"
-                          placeholder="cm"
-                        />
-                      </div>
-                      <div className="md:col-span-2">
-                        <label className="block text-sm font-medium text-slate-300 mb-1.5">
-                          Dimensi
-                        </label>
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                          <div>
-                            <label className="block text-sm font-medium text-slate-300 mb-1.5">
-                              P
-                            </label>
-                            <input
-                              type="text"
-                              {...register(
-                                `entrustedItems.${index}.itemLength`
-                              )}
-                              className="w-full px-3 py-2 bg-slate-700/50 border border-slate-600 rounded-lg focus:ring-2 focus:ring-sky-500 focus:border-sky-500 transition-colors placeholder-slate-500"
-                              placeholder="cm"
-                            />
-                          </div>
-                          <div>
-                            <label className="block text-sm font-medium text-slate-300 mb-1.5">
-                              L
-                            </label>
-                            <input
-                              type="text"
-                              {...register(`entrustedItems.${index}.itemWidth`)}
-                              className="w-full px-3 py-2 bg-slate-700/50 border border-slate-600 rounded-lg focus:ring-2 focus:ring-sky-500 focus:border-sky-500 transition-colors placeholder-slate-500"
-                              placeholder="cm"
-                            />
-                          </div>
-                          <div>
-                            <label className="block text-sm font-medium text-slate-300 mb-1.5">
-                              T
-                            </label>
-                            <input
-                              type="text"
-                              {...register(
-                                `entrustedItems.${index}.itemHeight`
-                              )}
-                              className="w-full px-3 py-2 bg-slate-700/50 border border-slate-600 rounded-lg focus:ring-2 focus:ring-sky-500 focus:border-sky-500 transition-colors placeholder-slate-500"
-                              placeholder="cm"
-                            />
-                          </div>
-                        </div>
-                      </div>
+                      <div className="md:col-span-2"><label className="text-xs text-slate-400 mb-1 block">Instruksi Khusus</label><input {...register(`entrustedItems.${index}.specialInstructions`)} className="w-full bg-slate-700/50 p-2 rounded border border-slate-600" /></div>
                     </div>
                   </div>
                 ))}
               </div>
-              {errors.entrustedItems?.root && (
-                <p className="text-red-400 text-xs mt-2">
-                  {errors.entrustedItems.root.message}
-                </p>
-              )}
             </div>
 
-            {/* Package Image Section */}
-            <div>
-              <label
-                htmlFor="packageImageInput"
-                className="block text-sm font-medium text-slate-300 mb-1.5"
-              >
-                Foto Paket/Box Keseluruhan{" "}
-                <span className="text-xs text-slate-400">
-                  (Opsional, maks. 5MB)
-                </span>
-              </label>
-              <div className="mt-1 flex flex-col items-center justify-center w-full px-6 pt-5 pb-6 border-2 border-slate-600 border-dashed rounded-md hover:border-sky-500 transition-colors">
-                {imagePreview ? (
-                  <img
-                    src={imagePreview}
-                    alt="Pratinjau Gambar Paket"
-                    className="mx-auto h-36 w-auto rounded-md object-contain mb-3"
-                  />
-                ) : (
-                  <UploadCloud className="mx-auto h-12 w-12 text-slate-500 mb-2" />
-                )}
-                <div className="space-y-1 text-center">
-                  <div className="flex text-sm text-slate-400 justify-center">
-                    <label
-                      htmlFor="packageImageInput"
-                      className="cursor-pointer rounded-md font-medium text-sky-400 hover:text-sky-300 focus-within:outline-none focus-within:ring-2 focus-within:ring-offset-2 focus-within:ring-offset-slate-800 focus-within:ring-sky-500 px-1"
-                    >
-                      <span>Unggah file</span>
-                      <input
-                        id="packageImageInput"
-                        name="packageImage"
-                        type="file"
-                        className="sr-only"
-                        onChange={handleImageChange}
-                        accept="image/png, image/jpeg, image/webp"
-                      />
-                    </label>
-                    <p className="pl-1 hidden sm:inline">
-                      atau tarik dan lepas
-                    </p>
-                  </div>
-                  <p className="text-xs text-slate-500">
-                    PNG, JPG, WEBP hingga 5MB
-                  </p>
-                </div>
+            {/* 4. Estimasi Biaya Live */}
+            <div className="bg-sky-900/40 border border-sky-500/50 p-6 rounded-xl flex flex-col sm:flex-row justify-between items-center gap-4">
+              <div>
+                <h3 className="text-sky-300 font-bold text-lg flex items-center"><DollarSign size={20} className="mr-1" /> Estimasi Total Biaya</h3>
+                <p className="text-[10px] text-slate-400 uppercase tracking-widest mt-1">* Dihitung dari Berat Aktual/Volumetrik & Durasi</p>
               </div>
-              {packageImage && (
-                <p className="text-slate-400 text-xs mt-1.5">
-                  File terpilih: {packageImage.name} (
-                  {(packageImage.size / 1024).toFixed(1)} KB)
-                </p>
-              )}
+              <div className="text-right"><span className="text-4xl font-black text-white">Rp {currentEstimate.toLocaleString('id-ID')}</span></div>
             </div>
 
-            {/* Submit Button */}
-            <div className="pt-4">
-              <button
-                type="submit"
-                disabled={isSubmitting || authIsLoading}
-                className="w-full flex justify-center items-center px-6 py-3 text-base font-medium text-white bg-sky-600 rounded-lg hover:bg-sky-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-slate-800 focus:ring-sky-500 disabled:opacity-60 disabled:cursor-not-allowed transition-colors"
-              >
-                {isSubmitting ? (
-                  <>
-                    <svg
-                      className="animate-spin -ml-1 mr-3 h-5 w-5 text-white"
-                      xmlns="http://www.w3.org/2000/svg"
-                      fill="none"
-                      viewBox="0 0 24 24"
-                    >
-                      <circle
-                        className="opacity-25"
-                        cx="12"
-                        cy="12"
-                        r="10"
-                        stroke="currentColor"
-                        strokeWidth="4"
-                      ></circle>
-                      <path
-                        className="opacity-75"
-                        fill="currentColor"
-                        d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                      ></path>
-                    </svg>
-                    Memproses...
-                  </>
-                ) : (
-                  "Buat Order Penitipan"
-                )}
-              </button>
+            {/* 5. Upload Image */}
+            <div>
+              <label className="block text-sm font-medium text-slate-300 mb-1.5">Foto Paket (Opsional)</label>
+              <div className="border-2 border-dashed border-slate-600 p-6 rounded-lg text-center hover:border-sky-500 cursor-pointer">
+                {imagePreview ? <img src={imagePreview} className="h-32 mx-auto rounded" /> : <UploadCloud className="mx-auto h-12 w-12 text-slate-500" />}
+                <label className="block text-sky-400 mt-2 cursor-pointer font-medium"><span>Pilih Gambar</span><input type="file" className="sr-only" onChange={handleImageChange} accept="image/*" /></label>
+              </div>
             </div>
+
+            <button type="submit" disabled={isSubmitting} className="w-full bg-sky-600 py-4 rounded-xl font-bold text-lg hover:bg-sky-700 disabled:opacity-50 transition-all">
+              {isSubmitting ? "Memproses Order..." : "Buat Order Penitipan"}
+            </button>
           </form>
         </div>
       </div>
