@@ -554,7 +554,7 @@ export default function NewEntrustmentOrderPage() {
                         />
                       </div>
 
-                      <div>
+                      <div className="md:col-span-2">
                         <label className="block text-sm font-medium text-slate-300 mb-1.5">
                           Kondisi Barang
                         </label>
@@ -565,40 +565,7 @@ export default function NewEntrustmentOrderPage() {
                           placeholder="Baru, Bekas, dll"
                         />
                       </div>
-                      <div>
-                        <label className="block text-sm font-medium text-slate-300 mb-1.5">
-                          Panjang
-                        </label>
-                        <input
-                          type="text"
-                          {...register(`entrustedItems.${index}.itemLength`)}
-                          className="w-full px-3 py-2 bg-slate-700/50 border border-slate-600 rounded-lg focus:ring-2 focus:ring-sky-500 focus:border-sky-500 transition-colors placeholder-slate-500"
-                          placeholder="cm"
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-sm font-medium text-slate-300 mb-1.5">
-                          Lebar
-                        </label>
-                        <input
-                          type="text"
-                          {...register(`entrustedItems.${index}.itemWidth`)}
-                          className="w-full px-3 py-2 bg-slate-700/50 border border-slate-600 rounded-lg focus:ring-2 focus:ring-sky-500 focus:border-sky-500 transition-colors placeholder-slate-500"
-                          placeholder="cm"
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-sm font-medium text-slate-300 mb-1.5">
-                          Tinggi
-                        </label>
-                        <input
-                          type="text"
-                          {...register(`entrustedItems.${index}.itemHeight`)}
-                          className="w-full px-3 py-2 bg-slate-700/50 border border-slate-600 rounded-lg focus:ring-2 focus:ring-sky-500 focus:border-sky-500 transition-colors placeholder-slate-500"
-                          placeholder="cm"
-                        />
-                      </div>
-                      <div>
+                      <div className="md:col-span-2">
                         <label className="block text-sm font-medium text-slate-300 mb-1.5">
                           Berat
                         </label>
@@ -608,6 +575,50 @@ export default function NewEntrustmentOrderPage() {
                           className="w-full px-3 py-2 bg-slate-700/50 border border-slate-600 rounded-lg focus:ring-2 focus:ring-sky-500 focus:border-sky-500 transition-colors placeholder-slate-500"
                           placeholder="cm"
                         />
+                      </div>
+                      <div className="md:col-span-2">
+                        <label className="block text-sm font-medium text-slate-300 mb-1.5">
+                          Dimensi
+                        </label>
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                          <div>
+                            <label className="block text-sm font-medium text-slate-300 mb-1.5">
+                              P
+                            </label>
+                            <input
+                              type="text"
+                              {...register(
+                                `entrustedItems.${index}.itemLength`
+                              )}
+                              className="w-full px-3 py-2 bg-slate-700/50 border border-slate-600 rounded-lg focus:ring-2 focus:ring-sky-500 focus:border-sky-500 transition-colors placeholder-slate-500"
+                              placeholder="cm"
+                            />
+                          </div>
+                          <div>
+                            <label className="block text-sm font-medium text-slate-300 mb-1.5">
+                              L
+                            </label>
+                            <input
+                              type="text"
+                              {...register(`entrustedItems.${index}.itemWidth`)}
+                              className="w-full px-3 py-2 bg-slate-700/50 border border-slate-600 rounded-lg focus:ring-2 focus:ring-sky-500 focus:border-sky-500 transition-colors placeholder-slate-500"
+                              placeholder="cm"
+                            />
+                          </div>
+                          <div>
+                            <label className="block text-sm font-medium text-slate-300 mb-1.5">
+                              T
+                            </label>
+                            <input
+                              type="text"
+                              {...register(
+                                `entrustedItems.${index}.itemHeight`
+                              )}
+                              className="w-full px-3 py-2 bg-slate-700/50 border border-slate-600 rounded-lg focus:ring-2 focus:ring-sky-500 focus:border-sky-500 transition-colors placeholder-slate-500"
+                              placeholder="cm"
+                            />
+                          </div>
+                        </div>
                       </div>
                     </div>
                   </div>
