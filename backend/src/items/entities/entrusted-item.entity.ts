@@ -10,6 +10,11 @@ import {
 } from 'typeorm';
 import { EntrustmentOrder } from './entrustment-order.entity';
 
+export class ColumnNumericTransformer {
+  to(data: number): number { return data; }
+  from(data: string): number { return parseFloat(data); }
+}
+
 @Entity('entrusted_item')
 export class EntrustedItem {
   @PrimaryGeneratedColumn()
@@ -32,6 +37,18 @@ export class EntrustedItem {
 
   @Column({ type: 'varchar', length: 100, nullable: true })
   itemCondition?: string; // Match the DTO field name
+
+  @Column({ type: 'decimal', precision: 10, scale: 2, nullable: true, transformer: new ColumnNumericTransformer() })
+  itemLength?: number;
+
+  @Column({ type: 'decimal', precision: 10, scale: 2, nullable: true, transformer: new ColumnNumericTransformer() })
+  itemWidth?: number;
+
+  @Column({ type: 'decimal', precision: 10, scale: 2, nullable: true, transformer: new ColumnNumericTransformer() })
+  itemHeight?: number;
+
+  @Column({ type: 'decimal', precision: 10, scale: 2, nullable: true, transformer: new ColumnNumericTransformer() })
+  itemWeight?: number;
 
   @Column({ type: 'int', default: 1, nullable: false })
   quantity: number;

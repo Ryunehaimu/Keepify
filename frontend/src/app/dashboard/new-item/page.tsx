@@ -75,10 +75,14 @@ const entrustedItemSchema = z.object({
     .string()
     .min(3, "Kondisi barang minimal 3 karakter")
     .optional(),
-  itemLength: z.number().min(1, "Jumlah minimal 1 cm").default(1),
-  itemWidth: z.number().min(1, "Jumlah minimal 1 cm").default(1),
-  itemHeight: z.number().min(1, "Jumlah minimal 1 cm").default(1),
-  itemWeight: z.coerce.number().nonnegative().optional(),
+  // Gunakan z.coerce agar string dari input otomatis jadi number
+  itemLength: z.coerce.number().min(1, "Minimal 1 cm").default(1),
+  itemWidth: z.coerce.number().min(1, "Minimal 1 cm").default(1),
+  itemHeight: z.coerce.number().min(1, "Minimal 1 cm").default(1),
+  itemWeight: z.preprocess(
+    (val) => (val === "" || val === undefined ? undefined : Number(val)),
+    z.number().nonnegative().optional()
+  ),
   quantity: z.number().min(1, "Jumlah minimal 1").default(1),
   brand: z.string().max(100).optional(),
   model: z.string().max(100).optional(),
@@ -570,7 +574,7 @@ export default function NewEntrustmentOrderPage() {
                           Panjang
                         </label>
                         <input
-                          type="text"
+                          type="number"
                           {...register(`entrustedItems.${index}.itemLength`)}
                           className="w-full px-3 py-2 bg-slate-700/50 border border-slate-600 rounded-lg focus:ring-2 focus:ring-sky-500 focus:border-sky-500 transition-colors placeholder-slate-500"
                           placeholder="cm"
@@ -581,7 +585,7 @@ export default function NewEntrustmentOrderPage() {
                           Lebar
                         </label>
                         <input
-                          type="text"
+                          type="number"
                           {...register(`entrustedItems.${index}.itemWidth`)}
                           className="w-full px-3 py-2 bg-slate-700/50 border border-slate-600 rounded-lg focus:ring-2 focus:ring-sky-500 focus:border-sky-500 transition-colors placeholder-slate-500"
                           placeholder="cm"
@@ -592,7 +596,7 @@ export default function NewEntrustmentOrderPage() {
                           Tinggi
                         </label>
                         <input
-                          type="text"
+                          type="number"
                           {...register(`entrustedItems.${index}.itemHeight`)}
                           className="w-full px-3 py-2 bg-slate-700/50 border border-slate-600 rounded-lg focus:ring-2 focus:ring-sky-500 focus:border-sky-500 transition-colors placeholder-slate-500"
                           placeholder="cm"
@@ -603,10 +607,11 @@ export default function NewEntrustmentOrderPage() {
                           Berat
                         </label>
                         <input
-                          type="text"
+                          type="number"
+                          step="0.01"
                           {...register(`entrustedItems.${index}.itemWeight`)}
                           className="w-full px-3 py-2 bg-slate-700/50 border border-slate-600 rounded-lg focus:ring-2 focus:ring-sky-500 focus:border-sky-500 transition-colors placeholder-slate-500"
-                          placeholder="cm"
+                          placeholder="kg"
                         />
                       </div>
                     </div>

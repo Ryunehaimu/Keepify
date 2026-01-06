@@ -23,10 +23,6 @@ export class ItemsService {
     createEntrustmentOrderDto: CreateEntrustmentOrderDto,
     imagePath?: string,
   ): Promise<EntrustmentOrder> {
-    console.log('=== ITEMS SERVICE CREATE DEBUG ===');
-    console.log('User ID:', userId);
-    console.log('DTO:', createEntrustmentOrderDto);
-    console.log('Image path:', imagePath);
 
     // Validate DTO
     if (!createEntrustmentOrderDto.entrustedItems || createEntrustmentOrderDto.entrustedItems.length === 0) {
@@ -78,6 +74,10 @@ export class ItemsService {
             category: itemDto.category ? itemDto.category.trim() : undefined,
             estimatedValue: itemDto.estimatedValue || undefined,
             itemCondition: itemDto.itemCondition ? itemDto.itemCondition.trim() : undefined,
+            itemLength: itemDto.itemLength,
+            itemWidth: itemDto.itemWidth,
+            itemHeight: itemDto.itemHeight,
+            itemWeight: itemDto.itemWeight,
             quantity: itemDto.quantity || 1,
             brand: itemDto.brand ? itemDto.brand.trim() : undefined,
             model: itemDto.model ? itemDto.model.trim() : undefined,
