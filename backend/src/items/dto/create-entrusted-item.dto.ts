@@ -1,5 +1,5 @@
 import { IsNotEmpty, IsString, IsOptional, IsNumber, IsInt, Min } from 'class-validator';
-import { Transform } from 'class-transformer';
+import { Transform, Type } from 'class-transformer';
 
 export class CreateEntrustedItemDto {
   @IsNotEmpty()
@@ -21,6 +21,26 @@ export class CreateEntrustedItemDto {
   @IsOptional()
   @IsString()
   itemCondition?: string; // Changed from 'condition' to 'itemCondition'
+
+  @IsOptional()
+  @Type(() => Number) // Memastikan konversi dari string JSON ke Number
+  @IsNumber()
+  itemLength?: number;
+
+  @IsOptional()
+  @Type(() => Number)
+  @IsNumber()
+  itemWidth?: number;
+
+  @IsOptional()
+  @Type(() => Number)
+  @IsNumber()
+  itemHeight?: number;
+
+  @IsOptional()
+  @Type(() => Number)
+  @IsNumber()
+  itemWeight?: number;
 
   @IsOptional()
   @Transform(({ value }) => parseInt(value))

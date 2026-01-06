@@ -6,16 +6,16 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { useAuth } from '@/contexts/AuthContext';
 import { apiClient } from '@/lib/api';
-import { 
-  ArrowLeft, 
-  Package, 
-  CalendarDays, 
-  Tag, 
-  FileText, 
-  DollarSign, 
-  ShieldCheck, 
-  Edit3, 
-  AlertTriangle, 
+import {
+  ArrowLeft,
+  Package,
+  CalendarDays,
+  Tag,
+  FileText,
+  DollarSign,
+  ShieldCheck,
+  Edit3,
+  AlertTriangle,
   Loader2,
   MapPin,
   Phone,
@@ -24,7 +24,9 @@ import {
   XCircle,
   Hash,
   Palette,
-  Settings
+  Settings,
+  Maximize,
+  Weight,
 } from 'lucide-react';
 
 // Updated interfaces for entrustment orders
@@ -35,6 +37,10 @@ interface EntrustedItem {
   category: string;
   estimatedValue?: string;
   itemCondition: string;
+  itemLength?: number;
+  itemWidth?: number;
+  itemHeight?: number;
+  itemWeight?: number;
   quantity: number;
   brand?: string;
   model?: string;
@@ -56,7 +62,36 @@ interface EntrustmentOrder {
   updatedAt: string;
   entrustedItems: EntrustedItem[];
   ownerId: number;
+  totalPrice: number;
 }
+
+// Fungsi hitung estimasi (Samakan dengan logika BE)
+const calculateTotalEstimate = (items: any[], frequency: string, pickupDate: string, retrievalDate?: string) => {
+  const PRICE_PER_KG_PER_DAY = 2000;
+  const MONITORING_FEE: Record<string, number> = {
+    none: 0,
+    weekly_once: 5000,
+    weekly_twice: 10000
+  };
+
+  const start = new Date(pickupDate);
+  if (isNaN(start.getTime())) return 0;
+
+  // Jika tgl pengambilan kosong, default 7 hari
+  const end = retrievalDate ? new Date(retrievalDate) : new Date(start.getTime() + 7 * 86400000);
+  const diffDays = Math.ceil(Math.abs(end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24)) || 1;
+
+  return items.reduce((total, item) => {
+    const weight = Number(item.itemWeight) || 0;
+    const vol = (Number(item.itemLength || 0) * Number(item.itemWidth || 0) * Number(item.itemHeight || 0)) / 6000;
+    const finalWeight = Math.max(weight, vol);
+
+    const itemBasePrice = (finalWeight * PRICE_PER_KG_PER_DAY * diffDays);
+    const itemTotal = (itemBasePrice + MONITORING_FEE[frequency]) * (Number(item.quantity) || 1);
+
+    return total + itemTotal;
+  }, 0);
+};
 
 export default function OrderDetailPage() {
   const params = useParams();
@@ -108,47 +143,47 @@ export default function OrderDetailPage() {
 
   const getStatusInfo = (status: string) => {
     switch (status?.toUpperCase()) {
-      case 'PENDING_PICKUP': 
-        return { 
-          text: 'Menunggu Penjemputan', 
-          color: 'text-yellow-400 border-yellow-700 bg-yellow-900/60', 
-          icon: <Loader2 className="inline mr-2 h-5 w-5 animate-spin" /> 
+      case 'PENDING_PICKUP':
+        return {
+          text: 'Menunggu Penjemputan',
+          color: 'text-yellow-400 border-yellow-700 bg-yellow-900/60',
+          icon: <Loader2 className="inline mr-2 h-5 w-5 animate-spin" />
         };
-      case 'PICKED_UP': 
-        return { 
-          text: 'Sudah Dijemput', 
-          color: 'text-blue-400 border-blue-700 bg-blue-900/60', 
-          icon: <CheckCircle className="inline mr-2 h-5 w-5" /> 
+      case 'PICKED_UP':
+        return {
+          text: 'Sudah Dijemput',
+          color: 'text-blue-400 border-blue-700 bg-blue-900/60',
+          icon: <CheckCircle className="inline mr-2 h-5 w-5" />
         };
-      case 'STORED': 
-        return { 
-          text: 'Disimpan Aman', 
-          color: 'text-green-400 border-green-700 bg-green-900/60', 
-          icon: <ShieldCheck className="inline mr-2 h-5 w-5" /> 
+      case 'STORED':
+        return {
+          text: 'Disimpan Aman',
+          color: 'text-green-400 border-green-700 bg-green-900/60',
+          icon: <ShieldCheck className="inline mr-2 h-5 w-5" />
         };
-      case 'PENDING_DELIVERY': 
-        return { 
-          text: 'Menunggu Pengiriman', 
-          color: 'text-orange-400 border-orange-700 bg-orange-900/60', 
-          icon: <Loader2 className="inline mr-2 h-5 w-5 animate-spin" /> 
+      case 'PENDING_DELIVERY':
+        return {
+          text: 'Menunggu Pengiriman',
+          color: 'text-orange-400 border-orange-700 bg-orange-900/60',
+          icon: <Loader2 className="inline mr-2 h-5 w-5 animate-spin" />
         };
-      case 'DELIVERED': 
-        return { 
-          text: 'Sudah Dikirim', 
-          color: 'text-slate-400 border-slate-600 bg-slate-700/60', 
-          icon: <Package className="inline mr-2 h-5 w-5" /> 
+      case 'DELIVERED':
+        return {
+          text: 'Sudah Dikirim',
+          color: 'text-slate-400 border-slate-600 bg-slate-700/60',
+          icon: <Package className="inline mr-2 h-5 w-5" />
         };
-      case 'CANCELLED': 
-        return { 
-          text: 'Dibatalkan', 
-          color: 'text-red-400 border-red-600 bg-red-900/60', 
-          icon: <XCircle className="inline mr-2 h-5 w-5" /> 
+      case 'CANCELLED':
+        return {
+          text: 'Dibatalkan',
+          color: 'text-red-400 border-red-600 bg-red-900/60',
+          icon: <XCircle className="inline mr-2 h-5 w-5" />
         };
-      default: 
-        return { 
-          text: status?.replace(/_/g, ' ') || 'Tidak Diketahui', 
-          color: 'text-gray-400 border-gray-600 bg-gray-800/60', 
-          icon: <Package className="inline mr-2 h-5 w-5" /> 
+      default:
+        return {
+          text: status?.replace(/_/g, ' ') || 'Tidak Diketahui',
+          color: 'text-gray-400 border-gray-600 bg-gray-800/60',
+          icon: <Package className="inline mr-2 h-5 w-5" />
         };
     }
   };
@@ -206,7 +241,7 @@ export default function OrderDetailPage() {
       </div>
     );
   }
-  
+
   const statusInfo = getStatusInfo(order.status);
   const totalValue = getTotalEstimatedValue(order);
 
@@ -255,9 +290,9 @@ export default function OrderDetailPage() {
                 <div>
                   <h3 className="text-sm text-slate-500 font-medium">Tanggal Penjemputan</h3>
                   <p className="text-base text-slate-300">
-                    {new Date(order.pickupRequestedDate).toLocaleDateString('id-ID', { 
-                      day: 'numeric', 
-                      month: 'long', 
+                    {new Date(order.pickupRequestedDate).toLocaleDateString('id-ID', {
+                      day: 'numeric',
+                      month: 'long',
                       year: 'numeric',
                       hour: '2-digit',
                       minute: '2-digit'
@@ -290,9 +325,9 @@ export default function OrderDetailPage() {
                   <div>
                     <h3 className="text-sm text-slate-500 font-medium">Perkiraan Pengambilan</h3>
                     <p className="text-base text-slate-300">
-                      {new Date(order.expectedRetrievalDate).toLocaleDateString('id-ID', { 
-                        day: 'numeric', 
-                        month: 'long', 
+                      {new Date(order.expectedRetrievalDate).toLocaleDateString('id-ID', {
+                        day: 'numeric',
+                        month: 'long',
                         year: 'numeric'
                       })}
                     </p>
@@ -300,11 +335,39 @@ export default function OrderDetailPage() {
                 </div>
               )}
 
+              {/* TAMBAHKAN TOTAL BIAYA DI SINI */}
+              <div className="flex items-start">
+                <DollarSign size={20} className="text-yellow-400 mr-3 mt-1 flex-shrink-0" />
+                <div>
+                  <h3 className="text-sm text-slate-500 font-medium">Total Biaya Penitipan</h3>
+                  <p className="text-xl font-bold text-white">
+                    Rp {Number(order.totalPrice || 0).toLocaleString('id-ID')}
+                  </p>
+                </div>
+              </div>
+
+              {order.expectedRetrievalDate && (
+                <div className="flex items-start">
+                  <CalendarDays size={20} className="text-sky-400 mr-3 mt-1 flex-shrink-0" />
+                  <div>
+                    <h3 className="text-sm text-slate-500 font-medium">Perkiraan Pengambilan</h3>
+                    <p className="text-base text-slate-300">
+                      {new Date(order.expectedRetrievalDate).toLocaleDateString('id-ID', {
+                        day: 'numeric',
+                        month: 'long',
+                        year: 'numeric'
+                      })}
+                    </p>
+                  </div>
+                </div>
+              )}
+
+              {/* Estimasi Nilai Barang (Tetap Ada) */}
               {totalValue > 0 && (
                 <div className="flex items-start">
-                  <DollarSign size={20} className="text-green-400 mr-3 mt-1 flex-shrink-0" />
+                  <Hash size={20} className="text-green-400 mr-3 mt-1 flex-shrink-0" />
                   <div>
-                    <h3 className="text-sm text-slate-500 font-medium">Total Estimasi Nilai</h3>
+                    <h3 className="text-sm text-slate-500 font-medium">Total Estimasi Nilai Barang</h3>
                     <p className="text-base text-slate-300">Rp {totalValue.toLocaleString('id-ID')}</p>
                   </div>
                 </div>
@@ -315,9 +378,9 @@ export default function OrderDetailPage() {
                 <div>
                   <h3 className="text-sm text-slate-500 font-medium">Dibuat Pada</h3>
                   <p className="text-base text-slate-300">
-                    {new Date(order.createdAt).toLocaleDateString('id-ID', { 
-                      day: 'numeric', 
-                      month: 'long', 
+                    {new Date(order.createdAt).toLocaleDateString('id-ID', {
+                      day: 'numeric',
+                      month: 'long',
                       year: 'numeric',
                       hour: '2-digit',
                       minute: '2-digit'
@@ -366,6 +429,7 @@ export default function OrderDetailPage() {
                     </div>
                   </div>
 
+                  {/* Satu saja field Kondisi */}
                   <div className="flex items-start">
                     <ShieldCheck size={16} className="text-emerald-400 mr-2 mt-1 flex-shrink-0" />
                     <div>
@@ -373,6 +437,30 @@ export default function OrderDetailPage() {
                       <p className="text-sm text-slate-300">{item.itemCondition || 'Tidak disebutkan'}</p>
                     </div>
                   </div>
+
+                  {/* Dimensi: Ditampilkan jika ada salah satu nilai */}
+                  {(item.itemLength || item.itemWidth || item.itemHeight) ? (
+                    <div className="flex items-start">
+                      <Maximize size={16} className="text-indigo-400 mr-2 mt-1 flex-shrink-0" />
+                      <div>
+                        <h4 className="text-xs text-slate-500 font-medium">Dimensi (P x L x T)</h4>
+                        <p className="text-sm text-slate-300">
+                          {item.itemLength ?? 0} x {item.itemWidth ?? 0} x {item.itemHeight ?? 0} cm
+                        </p>
+                      </div>
+                    </div>
+                  ) : null}
+
+                  {/* Berat */}
+                  {item.itemWeight != null && (
+                    <div className="flex items-start">
+                      <Weight size={16} className="text-teal-400 mr-2 mt-1 flex-shrink-0" />
+                      <div>
+                        <h4 className="text-xs text-slate-500 font-medium">Berat</h4>
+                        <p className="text-sm text-slate-300">{item.itemWeight} kg</p>
+                      </div>
+                    </div>
+                  )}
 
                   {item.estimatedValue && (
                     <div className="flex items-start">

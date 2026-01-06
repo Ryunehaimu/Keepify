@@ -25,7 +25,7 @@ import { extname } from 'path';
 @Controller('items')
 @UseGuards(JwtAuthGuard)
 export class ItemsController {
-  constructor(private readonly itemsService: ItemsService) {}
+  constructor(private readonly itemsService: ItemsService) { }
 
   @Post()
   @UseInterceptors(
@@ -66,9 +66,9 @@ export class ItemsController {
       } else {
         entrustedItems = body.entrustedItems;
       }
-      
+
       console.log('Parsed entrustedItems:', entrustedItems);
-      
+
       // Validate entrustedItems
       if (!Array.isArray(entrustedItems) || entrustedItems.length === 0) {
         throw new BadRequestException('entrustedItems must be a non-empty array');
@@ -76,9 +76,6 @@ export class ItemsController {
 
       // Clean and validate each item
       const cleanedItems = entrustedItems.map((item, index) => {
-        console.log(`Processing item ${index}:`, item);
-        
-        // Ensure required fields are present and not empty
         if (!item.name || item.name.trim() === '') {
           throw new BadRequestException(`Item ${index + 1}: name is required`);
         }
@@ -90,13 +87,21 @@ export class ItemsController {
           estimatedValue: item.estimatedValue || undefined,
           itemCondition: item.itemCondition ? item.itemCondition.trim() : undefined,
           quantity: parseInt(item.quantity) || 1,
+
+          // --- TAMBAHKAN INI ---
+          // Gunakan parseFloat karena berat/dimensi bisa desimal (0.5)
+          itemLength: item.itemLength ? parseFloat(item.itemLength) : 1,
+          itemWidth: item.itemWidth ? parseFloat(item.itemWidth) : 1,
+          itemHeight: item.itemHeight ? parseFloat(item.itemHeight) : 1,
+          itemWeight: item.itemWeight ? parseFloat(item.itemWeight) : undefined,
+          // ----------------------
+
           brand: item.brand ? item.brand.trim() : undefined,
           model: item.model ? item.model.trim() : undefined,
           color: item.color ? item.color.trim() : undefined,
           specialInstructions: item.specialInstructions ? item.specialInstructions.trim() : undefined,
         };
 
-        console.log(`Cleaned item ${index}:`, cleanedItem);
         return cleanedItem;
       });
 
@@ -138,11 +143,11 @@ export class ItemsController {
     } catch (error) {
       console.error('=== CREATE ENTRUSTMENT ORDER ERROR ===');
       console.error('Error details:', error);
-      
+
       if (error instanceof HttpException) {
         throw error;
       }
-      
+
       throw new HttpException(
         {
           success: false,
@@ -159,13 +164,13 @@ export class ItemsController {
     try {
       console.log('=== GET MY ITEMS DEBUG ===');
       console.log('User ID:', req.user.id);
-      
+
       const items = await this.itemsService.findUserEntrustmentOrders(req.user.id);
-      
+
       console.log('Found items count:', items.length);
       console.log('Sample item:', items[0]);
       console.log('=== GET MY ITEMS SUCCESS ===');
-      
+
       return {
         success: true,
         data: items,
@@ -173,7 +178,7 @@ export class ItemsController {
     } catch (error) {
       console.error('=== GET MY ITEMS ERROR ===');
       console.error('Error details:', error);
-      
+
       throw new HttpException(
         {
           success: false,
@@ -191,17 +196,17 @@ export class ItemsController {
       console.log('=== GET ITEM BY ID DEBUG ===');
       console.log('Item ID:', id);
       console.log('User ID:', req.user.id);
-      
+
       const item = await this.itemsService.findEntrustmentOrderById(id, req.user.id);
-      
+
       if (!item) {
         throw new HttpException('Item not found', HttpStatus.NOT_FOUND);
       }
-      
+
       console.log('Found item:', item);
       console.log('Items in order:', item.entrustedItems?.length || 0);
       console.log('=== GET ITEM BY ID SUCCESS ===');
-      
+
       return {
         success: true,
         data: item,
@@ -209,11 +214,11 @@ export class ItemsController {
     } catch (error) {
       console.error('=== GET ITEM BY ID ERROR ===');
       console.error('Error details:', error);
-      
+
       if (error instanceof HttpException) {
         throw error;
       }
-      
+
       throw new HttpException(
         {
           success: false,
@@ -230,12 +235,12 @@ export class ItemsController {
     try {
       console.log('=== GET MY SUMMARY DEBUG ===');
       console.log('User ID:', req.user.id);
-      
+
       const summary = await this.itemsService.getUserSummary(req.user.id);
-      
+
       console.log('Summary:', summary);
       console.log('=== GET MY SUMMARY SUCCESS ===');
-      
+
       return {
         success: true,
         data: summary,
@@ -243,7 +248,7 @@ export class ItemsController {
     } catch (error) {
       console.error('=== GET MY SUMMARY ERROR ===');
       console.error('Error details:', error);
-      
+
       throw new HttpException(
         {
           success: false,
