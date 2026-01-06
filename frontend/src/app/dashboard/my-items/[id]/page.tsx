@@ -62,7 +62,36 @@ interface EntrustmentOrder {
   updatedAt: string;
   entrustedItems: EntrustedItem[];
   ownerId: number;
+  totalPrice: number;
 }
+
+// Fungsi hitung estimasi (Samakan dengan logika BE)
+const calculateTotalEstimate = (items: any[], frequency: string, pickupDate: string, retrievalDate?: string) => {
+  const PRICE_PER_KG_PER_DAY = 2000;
+  const MONITORING_FEE: Record<string, number> = {
+    none: 0,
+    weekly_once: 5000,
+    weekly_twice: 10000
+  };
+
+  const start = new Date(pickupDate);
+  if (isNaN(start.getTime())) return 0;
+
+  // Jika tgl pengambilan kosong, default 7 hari
+  const end = retrievalDate ? new Date(retrievalDate) : new Date(start.getTime() + 7 * 86400000);
+  const diffDays = Math.ceil(Math.abs(end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24)) || 1;
+
+  return items.reduce((total, item) => {
+    const weight = Number(item.itemWeight) || 0;
+    const vol = (Number(item.itemLength || 0) * Number(item.itemWidth || 0) * Number(item.itemHeight || 0)) / 6000;
+    const finalWeight = Math.max(weight, vol);
+
+    const itemBasePrice = (finalWeight * PRICE_PER_KG_PER_DAY * diffDays);
+    const itemTotal = (itemBasePrice + MONITORING_FEE[frequency]) * (Number(item.quantity) || 1);
+
+    return total + itemTotal;
+  }, 0);
+};
 
 export default function OrderDetailPage() {
   const params = useParams();
@@ -306,11 +335,39 @@ export default function OrderDetailPage() {
                 </div>
               )}
 
+              {/* TAMBAHKAN TOTAL BIAYA DI SINI */}
+              <div className="flex items-start">
+                <DollarSign size={20} className="text-yellow-400 mr-3 mt-1 flex-shrink-0" />
+                <div>
+                  <h3 className="text-sm text-slate-500 font-medium">Total Biaya Penitipan</h3>
+                  <p className="text-xl font-bold text-white">
+                    Rp {Number(order.totalPrice || 0).toLocaleString('id-ID')}
+                  </p>
+                </div>
+              </div>
+
+              {order.expectedRetrievalDate && (
+                <div className="flex items-start">
+                  <CalendarDays size={20} className="text-sky-400 mr-3 mt-1 flex-shrink-0" />
+                  <div>
+                    <h3 className="text-sm text-slate-500 font-medium">Perkiraan Pengambilan</h3>
+                    <p className="text-base text-slate-300">
+                      {new Date(order.expectedRetrievalDate).toLocaleDateString('id-ID', {
+                        day: 'numeric',
+                        month: 'long',
+                        year: 'numeric'
+                      })}
+                    </p>
+                  </div>
+                </div>
+              )}
+
+              {/* Estimasi Nilai Barang (Tetap Ada) */}
               {totalValue > 0 && (
                 <div className="flex items-start">
-                  <DollarSign size={20} className="text-green-400 mr-3 mt-1 flex-shrink-0" />
+                  <Hash size={20} className="text-green-400 mr-3 mt-1 flex-shrink-0" />
                   <div>
-                    <h3 className="text-sm text-slate-500 font-medium">Total Estimasi Nilai</h3>
+                    <h3 className="text-sm text-slate-500 font-medium">Total Estimasi Nilai Barang</h3>
                     <p className="text-base text-slate-300">Rp {totalValue.toLocaleString('id-ID')}</p>
                   </div>
                 </div>

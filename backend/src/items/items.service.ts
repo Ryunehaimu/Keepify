@@ -23,16 +23,21 @@ export class ItemsService {
     createEntrustmentOrderDto: CreateEntrustmentOrderDto,
     imagePath?: string,
   ): Promise<EntrustmentOrder> {
+    // 1. Definisikan Konstanta Harga
+    const PRICE_PER_KG_PER_DAY = 2000; // Harga sewa gudang
+    const MONITORING_FEE = {
+      [MonitoringFrequency.NONE]: 0,
+      [MonitoringFrequency.WEEKLY_ONCE]: 5000,
+      [MonitoringFrequency.WEEKLY_TWICE]: 10000,
+    };
 
-    // Validate DTO
     if (!createEntrustmentOrderDto.entrustedItems || createEntrustmentOrderDto.entrustedItems.length === 0) {
       throw new BadRequestException('At least one entrusted item is required');
     }
 
-    // Start database transaction
     return await this.entrustmentOrderRepository.manager.transaction(async manager => {
       try {
-        // Create the main entrustment order (WITHOUT entrustedItems)
+        // Create the main entrustment order entity
         const entrustmentOrder = manager.create(EntrustmentOrder, {
           ownerId: userId,
           allowChecks: createEntrustmentOrderDto.allowChecks,
@@ -42,61 +47,67 @@ export class ItemsService {
           contactPhone: createEntrustmentOrderDto.contactPhone,
           expectedRetrievalDate: createEntrustmentOrderDto.expectedRetrievalDate
             ? new Date(createEntrustmentOrderDto.expectedRetrievalDate)
-            : undefined, // Use undefined instead of null
-          imagePath: imagePath || undefined, // Use undefined instead of null
+            : undefined,
+          imagePath: imagePath || undefined,
           status: OrderStatus.PENDING_PICKUP,
+          totalPrice: 0, // Inisialisasi awal
         });
 
-        console.log('Created entrustment order entity:', entrustmentOrder);
-
-        // Save the main order first to get the ID
         const savedOrder = await manager.save(EntrustmentOrder, entrustmentOrder);
-        console.log('Saved entrustment order with ID:', savedOrder.id);
+        let totalCalculatedPrice = 0;
 
-        // Now create and save each entrusted item with the order ID
-        const savedItems: EntrustedItem[] = [];
+        for (const itemDto of createEntrustmentOrderDto.entrustedItems) {
+          // --- PENANGANAN ERROR TS (Possibly Undefined) ---
+          const weight = itemDto.itemWeight || 0;
+          const length = itemDto.itemLength || 0;
+          const width = itemDto.itemWidth || 0;
+          const height = itemDto.itemHeight || 0;
 
-        for (let i = 0; i < createEntrustmentOrderDto.entrustedItems.length; i++) {
-          const itemDto = createEntrustmentOrderDto.entrustedItems[i];
+          // --- LOGIKA BERAT VOLUME VS BERAT AKTUAL ---
+          const volumeWeight = (length * width * height) / 6000;
+          const finalWeight = Math.max(weight, volumeWeight);
 
-          console.log(`Processing item ${i + 1}:`, itemDto);
+          // --- LOGIKA DURASI (HARI) ---
+          const startDate = new Date(createEntrustmentOrderDto.pickupRequestedDate);
+          const endDate = createEntrustmentOrderDto.expectedRetrievalDate
+            ? new Date(createEntrustmentOrderDto.expectedRetrievalDate)
+            : new Date(startDate.getTime() + (7 * 24 * 60 * 60 * 1000)); // Default 7 hari
 
-          // Validate required fields
-          if (!itemDto.name || itemDto.name.trim() === '') {
-            throw new BadRequestException(`Item ${i + 1}: name is required`);
-          }
+          const diffDays = Math.ceil(Math.abs(endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24)) || 1;
 
-          // Create the entrusted item entity
+          // --- HITUNG HARGA ITEM ---
+          const monitoringPrice = MONITORING_FEE[createEntrustmentOrderDto.monitoringFrequency || 'none'];
+          const itemBasePrice = (finalWeight * PRICE_PER_KG_PER_DAY * diffDays);
+          const itemTotalPrice = (itemBasePrice + monitoringPrice) * (itemDto.quantity || 1);
+
+          totalCalculatedPrice += itemTotalPrice;
+
+          // Save EntrustedItem
           const entrustedItem = manager.create(EntrustedItem, {
-            entrustmentOrderId: savedOrder.id, // Use the saved order ID
+            entrustmentOrderId: savedOrder.id,
             name: itemDto.name.trim(),
-            description: itemDto.description ? itemDto.description.trim() : undefined,
-            category: itemDto.category ? itemDto.category.trim() : undefined,
-            estimatedValue: itemDto.estimatedValue || undefined,
-            itemCondition: itemDto.itemCondition ? itemDto.itemCondition.trim() : undefined,
-            itemLength: itemDto.itemLength,
-            itemWidth: itemDto.itemWidth,
-            itemHeight: itemDto.itemHeight,
-            itemWeight: itemDto.itemWeight,
+            description: itemDto.description?.trim(),
+            category: itemDto.category?.trim(),
+            estimatedValue: itemDto.estimatedValue,
+            itemCondition: itemDto.itemCondition?.trim(),
+            itemLength: length,
+            itemWidth: width,
+            itemHeight: height,
+            itemWeight: weight,
             quantity: itemDto.quantity || 1,
-            brand: itemDto.brand ? itemDto.brand.trim() : undefined,
-            model: itemDto.model ? itemDto.model.trim() : undefined,
-            color: itemDto.color ? itemDto.color.trim() : undefined,
-            specialInstructions: itemDto.specialInstructions ? itemDto.specialInstructions.trim() : undefined,
+            brand: itemDto.brand?.trim(),
+            model: itemDto.model?.trim(),
+            color: itemDto.color?.trim(),
+            specialInstructions: itemDto.specialInstructions?.trim(),
           });
 
-          console.log(`Created entrusted item entity ${i + 1}:`, entrustedItem);
-
-          // Save the item
-          const savedItem = await manager.save(EntrustedItem, entrustedItem);
-          savedItems.push(savedItem);
-
-          console.log(`Saved entrusted item ${i + 1} with ID:`, savedItem.id);
+          await manager.save(EntrustedItem, entrustedItem);
         }
 
-        console.log('All items saved. Total items:', savedItems.length);
+        // Update total harga pada order utama
+        savedOrder.totalPrice = totalCalculatedPrice; // Pastikan field ini ada di Entity
+        await manager.save(EntrustmentOrder, savedOrder);
 
-        // Return the order with items
         const result = await manager.findOne(EntrustmentOrder, {
           where: { id: savedOrder.id },
           relations: ['entrustedItems'],
@@ -106,14 +117,8 @@ export class ItemsService {
           throw new BadRequestException('Failed to retrieve created entrustment order');
         }
 
-        console.log('Final result with relations:', result);
-        console.log('Items in result:', result.entrustedItems?.length || 0);
-        console.log('=== ITEMS SERVICE CREATE SUCCESS ===');
-
         return result;
       } catch (error) {
-        console.error('=== ITEMS SERVICE CREATE ERROR ===');
-        console.error('Transaction error:', error);
         throw error;
       }
     });
