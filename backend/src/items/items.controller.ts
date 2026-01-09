@@ -93,7 +93,7 @@ export class ItemsController {
           itemLength: item.itemLength ? parseFloat(item.itemLength) : 1,
           itemWidth: item.itemWidth ? parseFloat(item.itemWidth) : 1,
           itemHeight: item.itemHeight ? parseFloat(item.itemHeight) : 1,
-          itemWeight: item.itemWeight ? parseFloat(item.itemWeight) : undefined,
+          itemWeight: item.itemWeight ? parseFloat(item.itemWeight) : 0,
           // ----------------------
 
           brand: item.brand ? item.brand.trim() : undefined,

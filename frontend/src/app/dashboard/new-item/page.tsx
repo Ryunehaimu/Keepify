@@ -248,10 +248,6 @@ export default function NewEntrustmentOrderPage() {
                         <label className="text-xs text-slate-400 mb-1 block">Kategori</label>
                         <input {...register(`entrustedItems.${index}.category`)} className="w-full bg-slate-700/50 p-2 rounded border border-slate-600" />
                       </div>
-                      <div>
-                        <label className="text-xs text-slate-400 mb-1 block">Kondisi</label>
-                        <input {...register(`entrustedItems.${index}.itemCondition`)} className="w-full bg-slate-700/50 p-2 rounded border border-slate-600" />
-                      </div>
                       <div className="md:col-span-2">
                         <label className="text-xs text-slate-400 mb-1 block">Deskripsi</label>
                         <textarea {...register(`entrustedItems.${index}.description`)} rows={2} className="w-full bg-slate-700/50 p-2 rounded border border-slate-600" />
@@ -267,12 +263,6 @@ export default function NewEntrustmentOrderPage() {
                         <div><label className="text-xs text-slate-400 mb-1 block">Berat (kg)</label><input type="number" step="0.1" {...register(`entrustedItems.${index}.itemWeight`)} className="w-full bg-slate-700/50 p-2 rounded border border-slate-600" /></div>
                         <div><label className="text-xs text-slate-400 mb-1 block">Qty</label><input type="number" {...register(`entrustedItems.${index}.quantity`)} className="w-full bg-slate-700/50 p-2 rounded border border-slate-600" /></div>
                       </div>
-
-                      {/* Field Fleksibel Lainnya */}
-                      <div><label className="text-xs text-slate-400 mb-1 block">Merek</label><input {...register(`entrustedItems.${index}.brand`)} className="w-full bg-slate-700/50 p-2 rounded border border-slate-600" /></div>
-                      <div><label className="text-xs text-slate-400 mb-1 block">Model</label><input {...register(`entrustedItems.${index}.model`)} className="w-full bg-slate-700/50 p-2 rounded border border-slate-600" /></div>
-                      <div><label className="text-xs text-slate-400 mb-1 block">Warna</label><input {...register(`entrustedItems.${index}.color`)} className="w-full bg-slate-700/50 p-2 rounded border border-slate-600" /></div>
-                      <div><label className="text-xs text-slate-400 mb-1 block">Estimasi Nilai</label><input {...register(`entrustedItems.${index}.estimatedValue`)} className="w-full bg-slate-700/50 p-2 rounded border border-slate-600" /></div>
                       <div className="md:col-span-2"><label className="text-xs text-slate-400 mb-1 block">Instruksi Khusus</label><input {...register(`entrustedItems.${index}.specialInstructions`)} className="w-full bg-slate-700/50 p-2 rounded border border-slate-600" /></div>
                     </div>
                   </div>

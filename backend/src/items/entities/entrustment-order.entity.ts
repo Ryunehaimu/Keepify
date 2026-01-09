@@ -81,7 +81,7 @@ export class EntrustmentOrder {
   entrustedItems: EntrustedItem[];
 
   @Column({ type: 'decimal', precision: 12, scale: 2, default: 0 })
-  totalPrice: number; // Tambahkan baris ini
+  totalPrice: number;
 
   // Relationship to User (Owner)
   @ManyToOne(() => User, user => user.entrustmentOrders, {
