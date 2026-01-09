@@ -20,6 +20,16 @@ import type { NextConfig } from "next";
 const nextConfig: NextConfig = {
   /* config options here */
   reactStrictMode: true, // Pastikan ini true agar lebih aman
+  images: {
+    remotePatterns: [
+      {
+        protocol: 'http',
+        hostname: 'localhost',
+        port: '3001', // Sesuaikan dengan port backend Anda
+        pathname: '/uploads/**',
+      },
+    ],
+  },
 };
 
 export default nextConfig;

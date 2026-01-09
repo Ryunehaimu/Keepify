@@ -215,7 +215,7 @@ export default function MyItemsPage() {
               >
                 <div className="flex flex-col lg:flex-row">
                   {/* Image Section */}
-                  <div className="lg:w-64 h-48 lg:h-auto bg-slate-700 flex-shrink-0">
+                  <div className="lg:w-64 w-full h-56 lg:h-auto bg-slate-900 flex-shrink-0 relative overflow-hidden border-b lg:border-b-0 lg:border-r border-slate-700">
                     {order.imagePath ? (
                       <Image
                         src={`${getApiBaseUrl()}/${order.imagePath.replace(
@@ -223,13 +223,16 @@ export default function MyItemsPage() {
                           "/"
                         )}`}
                         alt={`Order #${order.id}`}
-                        layout="fill"
-                        objectFit="cover"
-                        className="transition-transform duration-300 hover:scale-105"
+                        fill // Menggunakan properti fill (pengganti layout="fill" di Next.js 13+)
+                        sizes="(max-width: 1024px) 100vw, 256px"
+                        className="object-cover transition-transform duration-500 hover:scale-110"
                       />
                     ) : (
-                      <div className="w-full h-full flex items-center justify-center">
-                        <Package size={48} className="text-slate-500" />
+                      <div className="w-full h-full flex flex-col items-center justify-center bg-slate-800 text-slate-500">
+                        <Package size={40} className="mb-2 opacity-20" />
+                        <span className="text-xs uppercase tracking-widest">
+                          No Image
+                        </span>
                       </div>
                     )}
                   </div>
