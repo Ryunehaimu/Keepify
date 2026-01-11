@@ -26,4 +26,8 @@ export class RegisterUserDto {
   @IsOptional()
   @IsString()
   address?: string;
+
+  @IsOptional()
+  @IsString()
+  otp?: string;
 }

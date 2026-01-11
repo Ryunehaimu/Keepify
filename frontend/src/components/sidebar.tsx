@@ -47,6 +47,7 @@ const Sidebar = ({ isOpen = false, onToggle }: SidebarProps) => {
       icon: FileCog,
     },
     { href: "/dashboard/manage-users", label: "Kelola Pengguna", icon: Users },
+    { href: "/dashboard/new-item", label: "Titip Barang", icon: PackagePlus },
   ];
 
   const navItems = user?.role === "admin" ? adminNavItems : userNavItems;

@@ -12,7 +12,12 @@ import { JwtAuthGuard } from './jwt-auth.guard';
 export class AuthController {
   constructor(private readonly authService: AuthService) {}
 
-  @Post('register') // Pastikan endpoint ini ada dan benar
+  @Post('send-register-otp')
+  async sendRegisterOtp(@Body('email') email: string) {
+    return this.authService.sendRegisterOtp(email);
+  }
+
+  @Post('register')
   async register(@Body() registerUserDto: RegisterUserDto) {
     return this.authService.register(registerUserDto);
   }

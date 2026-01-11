@@ -1,11 +1,14 @@
 import { Module } from '@nestjs/common';
 import { AuthService } from '@src/auth/auth.service';
 import { AuthController } from './auth.controller';
-import { UsersModule } from '../users/users.module'; // 1. Impor UsersModule
-import { PassportModule } from '@nestjs/passport';   // 2. Impor PassportModule
+import { UsersModule } from '../users/users.module'; // Import UsersModule
+import { User } from '../users/entities/user.entity';
+import { TypeOrmModule } from '@nestjs/typeorm';
+import { PassportModule } from '@nestjs/passport';
 import { JwtModule } from '@nestjs/jwt';             // 3. Impor JwtModule
 import { ConfigModule, ConfigService } from '@nestjs/config'; // 5. Untuk konfigurasi JWT
 import { JwtStrategy } from './jwt.strategy';       // 4. Impor JwtStrategy Anda
+import { MailModule } from '../mail/mail.module'; // Import MailModule
 
 @Module({
   imports: [
@@ -21,6 +24,7 @@ import { JwtStrategy } from './jwt.strategy';       // 4. Impor JwtStrategy Anda
       }),
       inject: [ConfigService], // Menyuntikkan ConfigService ke useFactory
     }),
+    MailModule, // Import MailModule
     // ConfigModule tidak perlu diimpor di sini jika sudah global di AppModule [cite: 17, 22]
   ],
   providers: [

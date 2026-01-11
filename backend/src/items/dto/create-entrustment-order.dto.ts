@@ -8,7 +8,8 @@ import {
   IsArray, 
   ValidateNested, 
   IsDateString,
-  IsEnum 
+  IsEnum,
+  IsNumber
 } from 'class-validator';
 import { CreateEntrustedItemDto } from './create-entrusted-item.dto';
 
@@ -20,18 +21,26 @@ export enum MonitoringFrequencyDto {
 
 export class CreateEntrustmentOrderDto {
   @IsBoolean()
+  @IsOptional()
+  isPickupRequired?: boolean;
+
+  @IsBoolean()
   allowChecks: boolean;
 
   @IsEnum(MonitoringFrequencyDto)
   monitoringFrequency: string;
 
-  @IsNotEmpty()
+  @IsOptional()
   @IsDateString()
-  pickupRequestedDate: string;
+  pickupRequestedDate?: string;
 
-  @IsNotEmpty()
+  @IsOptional()
   @IsString()
-  pickupAddress: string;
+  pickupAddress?: string;
+
+  @IsOptional()
+  @IsNumber()
+  pickupDistance?: number;  // Distance in KM
 
   @IsNotEmpty()
   @IsString()

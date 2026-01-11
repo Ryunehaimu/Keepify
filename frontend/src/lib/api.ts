@@ -86,6 +86,11 @@ class ApiClient {
     return response.data;
   }
 
+  async sendRegisterOtp(email: string) {
+    const response = await this.api.post('/auth/send-register-otp', { email });
+    return response.data;
+  }
+
   async getProfile() {
     const response = await this.api.get('/auth/profile');
     return response.data;

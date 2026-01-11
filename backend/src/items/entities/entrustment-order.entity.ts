@@ -45,10 +45,10 @@ export class EntrustmentOrder {
   })
   monitoringFrequency: MonitoringFrequency;
 
-  @Column({ type: 'datetime', nullable: false })
+  @Column({ type: 'datetime', nullable: true })
   pickupRequestedDate: Date;
 
-  @Column({ type: 'text', nullable: false })
+  @Column({ type: 'text', nullable: true })
   pickupAddress: string;
 
   @Column({ type: 'varchar', length: 20, nullable: false })
