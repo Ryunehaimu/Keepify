@@ -131,8 +131,8 @@ export class ItemsController {
       // Otherwise, use the logged-in user's ID.
       let finalOwnerId = req.user.id;
       if (req.user.role === 'admin' && body.ownerId) {
-         finalOwnerId = parseInt(body.ownerId);
-         console.log(`[ADMIN MODE] Creating order for User ID: ${finalOwnerId}`);
+        finalOwnerId = parseInt(body.ownerId);
+        console.log(`[ADMIN MODE] Creating order for User ID: ${finalOwnerId}`);
       }
 
       // Create the entrustment order
