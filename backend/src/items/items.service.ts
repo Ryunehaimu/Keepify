@@ -25,6 +25,7 @@ export class ItemsService {
   ): Promise<EntrustmentOrder> {
     // 1. Definisikan Konstanta Harga
     const PRICE_PER_KG_PER_DAY = 2000; // Harga sewa gudang
+    const PICKUP_PRICE_PER_KM = 2500; // Harga pickup per km (> 1km)
     const MONITORING_FEE = {
       [MonitoringFrequency.NONE]: 0,
       [MonitoringFrequency.WEEKLY_ONCE]: 5000,
@@ -42,8 +43,10 @@ export class ItemsService {
           ownerId: userId,
           allowChecks: createEntrustmentOrderDto.allowChecks,
           monitoringFrequency: createEntrustmentOrderDto.monitoringFrequency as MonitoringFrequency,
-          pickupRequestedDate: new Date(createEntrustmentOrderDto.pickupRequestedDate),
-          pickupAddress: createEntrustmentOrderDto.pickupAddress,
+          pickupRequestedDate: createEntrustmentOrderDto.isPickupRequired && createEntrustmentOrderDto.pickupRequestedDate 
+            ? new Date(createEntrustmentOrderDto.pickupRequestedDate) 
+            : undefined,
+          pickupAddress: createEntrustmentOrderDto.pickupAddress || undefined,
           contactPhone: createEntrustmentOrderDto.contactPhone,
           expectedRetrievalDate: createEntrustmentOrderDto.expectedRetrievalDate
             ? new Date(createEntrustmentOrderDto.expectedRetrievalDate)
@@ -68,7 +71,9 @@ export class ItemsService {
           const finalWeight = Math.max(weight, volumeWeight);
 
           // --- LOGIKA DURASI (HARI) ---
-          const startDate = new Date(createEntrustmentOrderDto.pickupRequestedDate);
+          const startDate = createEntrustmentOrderDto.pickupRequestedDate 
+            ? new Date(createEntrustmentOrderDto.pickupRequestedDate) 
+            : new Date(); // Fallback to NOW if no pickup date provided
           const endDate = createEntrustmentOrderDto.expectedRetrievalDate
             ? new Date(createEntrustmentOrderDto.expectedRetrievalDate)
             : new Date(startDate.getTime() + (7 * 24 * 60 * 60 * 1000)); // Default 7 hari
@@ -102,6 +107,19 @@ export class ItemsService {
           });
 
           await manager.save(EntrustedItem, entrustedItem);
+          await manager.save(EntrustedItem, entrustedItem);
+        }
+
+        // --- TAMBAH BIAYA PICKUP (JIKA ADA) ---
+        if (createEntrustmentOrderDto.isPickupRequired && createEntrustmentOrderDto.pickupDistance) {
+            const dist = createEntrustmentOrderDto.pickupDistance;
+            // Free for first 1km, then 2500 per km
+            const pickupFee = dist <= 1 ? 0 : (dist * 2500);
+            
+            totalCalculatedPrice += pickupFee;
+            console.log(`[PRICING] Added Pickup Fee: ${pickupFee} (Dist: ${dist}km)`);
+        } else {
+             console.log(`[PRICING] No Pickup Fee (IsRequired: ${createEntrustmentOrderDto.isPickupRequired}, Dist: ${createEntrustmentOrderDto.pickupDistance})`);
         }
 
         // Update total harga pada order utama

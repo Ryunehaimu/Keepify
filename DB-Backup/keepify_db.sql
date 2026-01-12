@@ -1,11 +1,11 @@
 -- phpMyAdmin SQL Dump
--- version 5.2.1
+-- version 5.2.3
 -- https://www.phpmyadmin.net/
 --
--- Host: 127.0.0.1
--- Generation Time: Jun 02, 2025 at 05:08 PM
--- Server version: 10.4.32-MariaDB
--- PHP Version: 8.2.12
+-- Host: localhost
+-- Generation Time: Jan 06, 2026 at 12:14 PM
+-- Server version: 12.1.2-MariaDB
+-- PHP Version: 8.5.1
 
 SET SQL_MODE = "NO_AUTO_VALUE_ON_ZERO";
 START TRANSACTION;
@@ -79,18 +79,85 @@ CREATE TABLE `digital_signatures` (
 -- --------------------------------------------------------
 
 --
+-- Table structure for table `entrusted_item`
+--
+
+CREATE TABLE `entrusted_item` (
+  `id` int(11) NOT NULL,
+  `entrustmentOrderId` int(11) NOT NULL,
+  `name` varchar(255) NOT NULL,
+  `description` text DEFAULT NULL,
+  `category` varchar(100) DEFAULT NULL,
+  `estimatedValue` varchar(50) DEFAULT NULL,
+  `itemCondition` varchar(100) DEFAULT NULL,
+  `quantity` int(11) NOT NULL DEFAULT 1,
+  `brand` varchar(100) DEFAULT NULL,
+  `model` varchar(100) DEFAULT NULL,
+  `color` varchar(50) DEFAULT NULL,
+  `specialInstructions` text DEFAULT NULL,
+  `createdAt` timestamp(6) NOT NULL DEFAULT current_timestamp(6),
+  `updatedAt` timestamp(6) NOT NULL DEFAULT current_timestamp(6) ON UPDATE current_timestamp(6),
+  `itemLength` decimal(10,2) DEFAULT NULL,
+  `itemWidth` decimal(10,2) DEFAULT NULL,
+  `itemHeight` decimal(10,2) DEFAULT NULL,
+  `itemWeight` decimal(10,2) DEFAULT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+--
+-- Dumping data for table `entrusted_item`
+--
+
+INSERT INTO `entrusted_item` (`id`, `entrustmentOrderId`, `name`, `description`, `category`, `estimatedValue`, `itemCondition`, `quantity`, `brand`, `model`, `color`, `specialInstructions`, `createdAt`, `updatedAt`, `itemLength`, `itemWidth`, `itemHeight`, `itemWeight`) VALUES
+(8, 8, 'memek', 'memekememekmekmek', 'memek', NULL, NULL, 10, NULL, NULL, NULL, NULL, '2026-01-06 09:18:34.099753', '2026-01-06 09:18:34.099753', 30.00, 30.00, 15.00, 0.50),
+(9, 9, 'KOntol', 'tanoanognaowngowangoanognaw', 'Mainan', NULL, NULL, 2, NULL, NULL, NULL, NULL, '2026-01-06 09:22:49.853040', '2026-01-06 09:22:49.853040', 15.00, 10.00, 30.00, 1.00),
+(10, 10, 'Dildo', 'testetstetstete', 'mainan', NULL, NULL, 1, NULL, NULL, NULL, NULL, '2026-01-06 09:48:33.664926', '2026-01-06 09:48:33.664926', 30.00, 30.00, 30.00, 5.00);
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `entrustment_order`
+--
+
+CREATE TABLE `entrustment_order` (
+  `id` int(11) NOT NULL,
+  `ownerId` int(11) NOT NULL,
+  `allowChecks` tinyint(4) NOT NULL DEFAULT 0,
+  `monitoringFrequency` enum('none','weekly_once','weekly_twice') NOT NULL DEFAULT 'none',
+  `pickupRequestedDate` datetime NOT NULL,
+  `pickupAddress` text NOT NULL,
+  `contactPhone` varchar(20) NOT NULL,
+  `expectedRetrievalDate` datetime DEFAULT NULL,
+  `status` enum('PENDING_PICKUP','PICKED_UP','STORED','PENDING_DELIVERY','DELIVERED','CANCELLED') NOT NULL DEFAULT 'PENDING_PICKUP',
+  `imagePath` varchar(500) DEFAULT NULL,
+  `createdAt` timestamp(6) NOT NULL DEFAULT current_timestamp(6),
+  `updatedAt` timestamp(6) NOT NULL DEFAULT current_timestamp(6) ON UPDATE current_timestamp(6),
+  `totalPrice` decimal(12,2) NOT NULL DEFAULT 0.00
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+--
+-- Dumping data for table `entrustment_order`
+--
+
+INSERT INTO `entrustment_order` (`id`, `ownerId`, `allowChecks`, `monitoringFrequency`, `pickupRequestedDate`, `pickupAddress`, `contactPhone`, `expectedRetrievalDate`, `status`, `imagePath`, `createdAt`, `updatedAt`, `totalPrice`) VALUES
+(8, 4, 1, 'weekly_once', '2026-01-06 08:00:00', 'sangkrah waojfoajofjoawf', '089271276362', '2026-01-08 07:00:00', 'PENDING_PICKUP', NULL, '2026-01-06 09:18:34.092873', '2026-01-06 09:18:34.000000', 140000.00),
+(9, 4, 1, 'weekly_once', '2026-01-06 19:00:00', 'ojawojofawofjoajofaowfaw', '08219284924', '2026-01-08 07:00:00', 'PENDING_PICKUP', NULL, '2026-01-06 09:22:49.849892', '2026-01-06 09:22:49.000000', 18000.00),
+(10, 4, 1, 'none', '2026-01-06 19:00:00', 'Sangkrah rt 03 rw 06', '089275242678', '2026-01-09 07:00:00', 'PENDING_PICKUP', NULL, '2026-01-06 09:48:33.659788', '2026-01-06 09:48:33.000000', 30000.00);
+
+-- --------------------------------------------------------
+
+--
 -- Table structure for table `item_details`
 --
 
 CREATE TABLE `item_details` (
   `id` int(11) NOT NULL,
   `quantity` int(11) NOT NULL DEFAULT 1,
-  `createdAt` datetime(6) NOT NULL DEFAULT current_timestamp(6),
-  `updatedAt` datetime(6) NOT NULL DEFAULT current_timestamp(6) ON UPDATE current_timestamp(6),
   `itemName` varchar(255) NOT NULL,
   `conditionNotes` text DEFAULT NULL,
   `estimatedValue` decimal(10,2) DEFAULT NULL,
-  `storageItemId` int(11) NOT NULL
+  `storageItemId` int(11) NOT NULL,
+  `createdAt` timestamp(6) NOT NULL DEFAULT current_timestamp(6),
+  `updatedAt` timestamp(6) NOT NULL DEFAULT current_timestamp(6) ON UPDATE current_timestamp(6)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 -- --------------------------------------------------------
@@ -117,11 +184,11 @@ CREATE TABLE `monitoring_records` (
   `id` int(11) NOT NULL,
   `admin_id` int(11) DEFAULT NULL,
   `notes` text DEFAULT NULL,
-  `createdAt` datetime(6) NOT NULL DEFAULT current_timestamp(6),
-  `updatedAt` datetime(6) NOT NULL DEFAULT current_timestamp(6) ON UPDATE current_timestamp(6),
   `conditionStatus` enum('excellent','good','fair','poor') NOT NULL DEFAULT 'good',
   `storageItemId` int(11) NOT NULL,
-  `adminId` int(11) NOT NULL
+  `adminId` int(11) NOT NULL,
+  `createdAt` timestamp(6) NOT NULL DEFAULT current_timestamp(6),
+  `updatedAt` timestamp(6) NOT NULL DEFAULT current_timestamp(6) ON UPDATE current_timestamp(6)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 -- --------------------------------------------------------
@@ -153,8 +220,6 @@ CREATE TABLE `storage_items` (
   `title` varchar(255) NOT NULL,
   `description` text DEFAULT NULL,
   `status` enum('pending','picked_up','stored','ready_pickup','returned','cancelled') NOT NULL DEFAULT 'pending',
-  `createdAt` datetime(6) NOT NULL DEFAULT current_timestamp(6),
-  `updatedAt` datetime(6) NOT NULL DEFAULT current_timestamp(6) ON UPDATE current_timestamp(6),
   `estimatedValue` decimal(12,2) DEFAULT NULL,
   `durationDays` int(11) NOT NULL,
   `startDate` date DEFAULT NULL,
@@ -165,7 +230,9 @@ CREATE TABLE `storage_items` (
   `pickupAddress` text DEFAULT NULL,
   `pickupDate` datetime DEFAULT NULL,
   `pickupNotes` text DEFAULT NULL,
-  `userId` int(11) NOT NULL
+  `userId` int(11) NOT NULL,
+  `createdAt` timestamp(6) NOT NULL DEFAULT current_timestamp(6),
+  `updatedAt` timestamp(6) NOT NULL DEFAULT current_timestamp(6) ON UPDATE current_timestamp(6)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 -- --------------------------------------------------------
@@ -180,20 +247,21 @@ CREATE TABLE `users` (
   `password` varchar(255) NOT NULL,
   `address` text DEFAULT NULL,
   `role` enum('user','admin') NOT NULL DEFAULT 'user',
-  `createdAt` datetime(6) NOT NULL DEFAULT current_timestamp(6),
-  `updatedAt` datetime(6) NOT NULL DEFAULT current_timestamp(6) ON UPDATE current_timestamp(6),
   `firstName` varchar(255) NOT NULL,
   `lastName` varchar(255) NOT NULL,
   `isActive` tinyint(4) NOT NULL DEFAULT 1,
-  `phone` varchar(255) DEFAULT NULL
+  `phone` varchar(255) DEFAULT NULL,
+  `createdAt` timestamp(6) NOT NULL DEFAULT current_timestamp(6),
+  `updatedAt` timestamp(6) NOT NULL DEFAULT current_timestamp(6) ON UPDATE current_timestamp(6)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 --
 -- Dumping data for table `users`
 --
 
-INSERT INTO `users` (`id`, `email`, `password`, `address`, `role`, `createdAt`, `updatedAt`, `firstName`, `lastName`, `isActive`, `phone`) VALUES
-(1, 'ryunehaimu007@gmail.com', '$2b$10$XUa.La2FO2oIZ53PWftVdO8jnb5UnvGHUUIC0sHWlmt6.5j.mw6FK', 'testtttt', 'user', '2025-06-02 21:29:00.497163', '2025-06-02 21:29:00.497163', 'Rasyid', 'Padang', 1, '089518368265');
+INSERT INTO `users` (`id`, `email`, `password`, `address`, `role`, `firstName`, `lastName`, `isActive`, `phone`, `createdAt`, `updatedAt`) VALUES
+(4, 'syam@gmail.com', '$2b$10$fXucFk6h3gFWo8EUzPk9C.W9upgmAAEH7tOey1TBeLBLSStSZACsC', 'Sangkrah', 'user', 'Syam', 'Dul', 1, '0897262192834', '2025-12-28 12:26:10.686102', '2025-12-28 12:26:10.686102'),
+(5, 'admin@gmail.com', '$2b$10$fXucFk6h3gFWo8EUzPk9C.W9upgmAAEH7tOey1TBeLBLSStSZACsC', NULL, 'admin', 'Admin', '', 1, NULL, '2025-12-28 12:30:42.405903', '2025-12-28 12:32:48.696301');
 
 --
 -- Indexes for dumped tables
@@ -223,6 +291,20 @@ ALTER TABLE `digital_signatures`
   ADD KEY `storage_item_id` (`storage_item_id`),
   ADD KEY `user_id` (`user_id`),
   ADD KEY `admin_id` (`admin_id`);
+
+--
+-- Indexes for table `entrusted_item`
+--
+ALTER TABLE `entrusted_item`
+  ADD PRIMARY KEY (`id`),
+  ADD KEY `FK_fbdf8e70898385b5627a92a4787` (`entrustmentOrderId`);
+
+--
+-- Indexes for table `entrustment_order`
+--
+ALTER TABLE `entrustment_order`
+  ADD PRIMARY KEY (`id`),
+  ADD KEY `FK_ddfdbf8cbfea6b234f81ba1e23a` (`ownerId`);
 
 --
 -- Indexes for table `item_details`
@@ -289,6 +371,18 @@ ALTER TABLE `digital_signatures`
   MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
 
 --
+-- AUTO_INCREMENT for table `entrusted_item`
+--
+ALTER TABLE `entrusted_item`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=11;
+
+--
+-- AUTO_INCREMENT for table `entrustment_order`
+--
+ALTER TABLE `entrustment_order`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=11;
+
+--
 -- AUTO_INCREMENT for table `item_details`
 --
 ALTER TABLE `item_details`
@@ -322,7 +416,7 @@ ALTER TABLE `storage_items`
 -- AUTO_INCREMENT for table `users`
 --
 ALTER TABLE `users`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=6;
 
 --
 -- Constraints for dumped tables
@@ -349,6 +443,18 @@ ALTER TABLE `digital_signatures`
   ADD CONSTRAINT `digital_signatures_ibfk_1` FOREIGN KEY (`storage_item_id`) REFERENCES `storage_items` (`id`) ON DELETE CASCADE,
   ADD CONSTRAINT `digital_signatures_ibfk_2` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`),
   ADD CONSTRAINT `digital_signatures_ibfk_3` FOREIGN KEY (`admin_id`) REFERENCES `users` (`id`);
+
+--
+-- Constraints for table `entrusted_item`
+--
+ALTER TABLE `entrusted_item`
+  ADD CONSTRAINT `FK_fbdf8e70898385b5627a92a4787` FOREIGN KEY (`entrustmentOrderId`) REFERENCES `entrustment_order` (`id`) ON DELETE CASCADE ON UPDATE NO ACTION;
+
+--
+-- Constraints for table `entrustment_order`
+--
+ALTER TABLE `entrustment_order`
+  ADD CONSTRAINT `FK_ddfdbf8cbfea6b234f81ba1e23a` FOREIGN KEY (`ownerId`) REFERENCES `users` (`id`) ON DELETE CASCADE ON UPDATE NO ACTION;
 
 --
 -- Constraints for table `monitoring_photos`

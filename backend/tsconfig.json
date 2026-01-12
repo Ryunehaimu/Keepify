@@ -6,12 +6,15 @@
     "emitDecoratorMetadata": true,
     "experimentalDecorators": true,
     "allowSyntheticDefaultImports": true,
+    "esModuleInterop": true,
     "target": "ES2023",
     "sourceMap": true,
     "outDir": "./dist",
     "baseUrl": "./",
     "paths": {
-      "@src/*": ["src/*"] // Mendefinisikan @src/* akan mengarah ke src/*
+      "@src/*": [
+        "src/*"
+      ] // Mendefinisikan @src/* akan mengarah ke src/*
       // Anda mungkin juga melihat "@/*": ["src/*"] atau alias lainnya
     },
     "incremental": true,

@@ -116,6 +116,8 @@ export class ItemsController {
         contactPhone: body.contactPhone,
         expectedRetrievalDate: body.expectedRetrievalDate || undefined,
         entrustedItems: cleanedItems,
+        isPickupRequired: body.isPickupRequired === 'true' || body.isPickupRequired === true,
+        pickupDistance: body.pickupDistance ? parseFloat(body.pickupDistance) : undefined,
       };
 
       console.log('Final DTO:', createEntrustmentOrderDto);
@@ -124,9 +126,18 @@ export class ItemsController {
       const imagePath = file ? file.path : undefined;
       console.log('Image path:', imagePath);
 
+      // Determine Owner ID:
+      // If Admin and ownerId is provided in body, use that.
+      // Otherwise, use the logged-in user's ID.
+      let finalOwnerId = req.user.id;
+      if (req.user.role === 'admin' && body.ownerId) {
+         finalOwnerId = parseInt(body.ownerId);
+         console.log(`[ADMIN MODE] Creating order for User ID: ${finalOwnerId}`);
+      }
+
       // Create the entrustment order
       const result = await this.itemsService.createEntrustmentOrder(
-        req.user.id,
+        finalOwnerId,
         createEntrustmentOrderDto,
         imagePath,
       );

@@ -1,11 +1,11 @@
-'use client';
+"use client";
 
-import React, { useEffect, useState } from 'react';
-import { useParams, useRouter } from 'next/navigation';
-import Link from 'next/link';
-import Image from 'next/image';
-import { useAuth } from '@/contexts/AuthContext';
-import { apiClient } from '@/lib/api';
+import React, { useEffect, useState } from "react";
+import { useParams, useRouter } from "next/navigation";
+import Link from "next/link";
+import Image from "next/image";
+import { useAuth } from "@/contexts/AuthContext";
+import { apiClient } from "@/lib/api";
 import {
   ArrowLeft,
   Package,
@@ -27,7 +27,7 @@ import {
   Settings,
   Maximize,
   Weight,
-} from 'lucide-react';
+} from "lucide-react";
 
 // Updated interfaces for entrustment orders
 interface EntrustedItem {
@@ -66,28 +66,44 @@ interface EntrustmentOrder {
 }
 
 // Fungsi hitung estimasi (Samakan dengan logika BE)
-const calculateTotalEstimate = (items: any[], frequency: string, pickupDate: string, retrievalDate?: string) => {
+const calculateTotalEstimate = (
+  items: any[],
+  frequency: string,
+  pickupDate: string,
+  retrievalDate?: string
+) => {
   const PRICE_PER_KG_PER_DAY = 2000;
   const MONITORING_FEE: Record<string, number> = {
     none: 0,
     weekly_once: 5000,
-    weekly_twice: 10000
+    weekly_twice: 10000,
   };
 
   const start = new Date(pickupDate);
   if (isNaN(start.getTime())) return 0;
 
   // Jika tgl pengambilan kosong, default 7 hari
-  const end = retrievalDate ? new Date(retrievalDate) : new Date(start.getTime() + 7 * 86400000);
-  const diffDays = Math.ceil(Math.abs(end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24)) || 1;
+  const end = retrievalDate
+    ? new Date(retrievalDate)
+    : new Date(start.getTime() + 7 * 86400000);
+  const diffDays =
+    Math.ceil(
+      Math.abs(end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24)
+    ) || 1;
 
   return items.reduce((total, item) => {
     const weight = Number(item.itemWeight) || 0;
-    const vol = (Number(item.itemLength || 0) * Number(item.itemWidth || 0) * Number(item.itemHeight || 0)) / 6000;
+    const vol =
+      (Number(item.itemLength || 0) *
+        Number(item.itemWidth || 0) *
+        Number(item.itemHeight || 0)) /
+      6000;
     const finalWeight = Math.max(weight, vol);
 
-    const itemBasePrice = (finalWeight * PRICE_PER_KG_PER_DAY * diffDays);
-    const itemTotal = (itemBasePrice + MONITORING_FEE[frequency]) * (Number(item.quantity) || 1);
+    const itemBasePrice = finalWeight * PRICE_PER_KG_PER_DAY * diffDays;
+    const itemTotal =
+      (itemBasePrice + MONITORING_FEE[frequency]) *
+      (Number(item.quantity) || 1);
 
     return total + itemTotal;
   }, 0);
@@ -101,11 +117,15 @@ export default function OrderDetailPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const orderId = params?.id ? (Array.isArray(params.id) ? params.id[0] : params.id) : null;
+  const orderId = params?.id
+    ? Array.isArray(params.id)
+      ? params.id[0]
+      : params.id
+    : null;
 
   useEffect(() => {
     if (!authIsLoading && !isAuthenticated) {
-      router.push('/login?message=Silakan login untuk melihat detail order');
+      router.push("/login?message=Silakan login untuk melihat detail order");
     }
   }, [authIsLoading, isAuthenticated, router]);
 
@@ -114,7 +134,12 @@ export default function OrderDetailPage() {
       const fetchOrderDetail = async () => {
         setIsLoading(true);
         setError(null);
-        console.log("Fetching order with ID:", orderId, "Type:", typeof orderId);
+        console.log(
+          "Fetching order with ID:",
+          orderId,
+          "Type:",
+          typeof orderId
+        );
         try {
           const response = await apiClient.getStorageItem(Number(orderId));
           console.log("Fetched order detail:", response);
@@ -124,7 +149,11 @@ export default function OrderDetailPage() {
           if (err.response?.status === 404 || err.response?.status === 403) {
             setError(`Order tidak ditemukan atau Anda tidak memiliki akses.`);
           } else {
-            setError(err.response?.data?.message || err.message || 'Gagal memuat detail order.');
+            setError(
+              err.response?.data?.message ||
+                err.message ||
+                "Gagal memuat detail order."
+            );
           }
         } finally {
           setIsLoading(false);
@@ -138,73 +167,80 @@ export default function OrderDetailPage() {
   }, [isAuthenticated, orderId]);
 
   const getApiBaseUrl = () => {
-    return process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000';
+    return process.env.NEXT_PUBLIC_API_URL || "http://localhost:3000";
   };
 
   const getStatusInfo = (status: string) => {
     switch (status?.toUpperCase()) {
-      case 'PENDING_PICKUP':
+      case "PENDING_PICKUP":
         return {
-          text: 'Menunggu Penjemputan',
-          color: 'text-yellow-400 border-yellow-700 bg-yellow-900/60',
-          icon: <Loader2 className="inline mr-2 h-5 w-5 animate-spin" />
+          text: "Menunggu Penjemputan",
+          color: "text-yellow-400 border-yellow-700 bg-yellow-900/60",
+          icon: <Loader2 className="inline mr-2 h-5 w-5 animate-spin" />,
         };
-      case 'PICKED_UP':
+      case "PICKED_UP":
         return {
-          text: 'Sudah Dijemput',
-          color: 'text-blue-400 border-blue-700 bg-blue-900/60',
-          icon: <CheckCircle className="inline mr-2 h-5 w-5" />
+          text: "Sudah Dijemput",
+          color: "text-blue-400 border-blue-700 bg-blue-900/60",
+          icon: <CheckCircle className="inline mr-2 h-5 w-5" />,
         };
-      case 'STORED':
+      case "STORED":
         return {
-          text: 'Disimpan Aman',
-          color: 'text-green-400 border-green-700 bg-green-900/60',
-          icon: <ShieldCheck className="inline mr-2 h-5 w-5" />
+          text: "Disimpan Aman",
+          color: "text-green-400 border-green-700 bg-green-900/60",
+          icon: <ShieldCheck className="inline mr-2 h-5 w-5" />,
         };
-      case 'PENDING_DELIVERY':
+      case "PENDING_DELIVERY":
         return {
-          text: 'Menunggu Pengiriman',
-          color: 'text-orange-400 border-orange-700 bg-orange-900/60',
-          icon: <Loader2 className="inline mr-2 h-5 w-5 animate-spin" />
+          text: "Menunggu Pengiriman",
+          color: "text-orange-400 border-orange-700 bg-orange-900/60",
+          icon: <Loader2 className="inline mr-2 h-5 w-5 animate-spin" />,
         };
-      case 'DELIVERED':
+      case "DELIVERED":
         return {
-          text: 'Sudah Dikirim',
-          color: 'text-slate-400 border-slate-600 bg-slate-700/60',
-          icon: <Package className="inline mr-2 h-5 w-5" />
+          text: "Sudah Dikirim",
+          color: "text-slate-400 border-slate-600 bg-slate-700/60",
+          icon: <Package className="inline mr-2 h-5 w-5" />,
         };
-      case 'CANCELLED':
+      case "CANCELLED":
         return {
-          text: 'Dibatalkan',
-          color: 'text-red-400 border-red-600 bg-red-900/60',
-          icon: <XCircle className="inline mr-2 h-5 w-5" />
+          text: "Dibatalkan",
+          color: "text-red-400 border-red-600 bg-red-900/60",
+          icon: <XCircle className="inline mr-2 h-5 w-5" />,
         };
       default:
         return {
-          text: status?.replace(/_/g, ' ') || 'Tidak Diketahui',
-          color: 'text-gray-400 border-gray-600 bg-gray-800/60',
-          icon: <Package className="inline mr-2 h-5 w-5" />
+          text: status?.replace(/_/g, " ") || "Tidak Diketahui",
+          color: "text-gray-400 border-gray-600 bg-gray-800/60",
+          icon: <Package className="inline mr-2 h-5 w-5" />,
         };
     }
   };
 
   const getMonitoringFrequencyText = (frequency: string) => {
     switch (frequency) {
-      case 'none': return 'Tidak ada monitoring';
-      case 'weekly_once': return '1 kali seminggu';
-      case 'weekly_twice': return '2 kali seminggu';
-      default: return frequency;
+      case "none":
+        return "Tidak ada monitoring";
+      case "weekly_once":
+        return "1 kali seminggu";
+      case "weekly_twice":
+        return "2 kali seminggu";
+      default:
+        return frequency;
     }
   };
 
   const getTotalItems = (order: EntrustmentOrder) => {
-    return order.entrustedItems.reduce((total, item) => total + item.quantity, 0);
+    return order.entrustedItems.reduce(
+      (total, item) => total + item.quantity,
+      0
+    );
   };
 
   const getTotalEstimatedValue = (order: EntrustmentOrder) => {
     return order.entrustedItems.reduce((total, item) => {
       const value = item.estimatedValue ? parseFloat(item.estimatedValue) : 0;
-      return total + (value * item.quantity);
+      return total + value * item.quantity;
     }, 0);
   };
 
@@ -220,9 +256,14 @@ export default function OrderDetailPage() {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center bg-slate-900 text-white p-4">
         <AlertTriangle size={48} className="text-red-500 mb-4" />
-        <h2 className="text-2xl font-semibold text-red-400 mb-2">Terjadi Kesalahan</h2>
+        <h2 className="text-2xl font-semibold text-red-400 mb-2">
+          Terjadi Kesalahan
+        </h2>
         <p className="text-slate-300 mb-6 text-center">{error}</p>
-        <Link href="/dashboard/my-items" className="px-6 py-2 bg-sky-600 hover:bg-sky-700 rounded-lg text-white font-medium">
+        <Link
+          href="/dashboard/my-items"
+          className="px-6 py-2 bg-sky-600 hover:bg-sky-700 rounded-lg text-white font-medium"
+        >
           Kembali ke Daftar Order
         </Link>
       </div>
@@ -233,9 +274,16 @@ export default function OrderDetailPage() {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center bg-slate-900 text-white p-4">
         <Package size={48} className="text-slate-500 mb-4" />
-        <h2 className="text-2xl font-semibold text-slate-400 mb-2">Order Tidak Ditemukan</h2>
-        <p className="text-slate-300 mb-6 text-center">Detail untuk order ini tidak dapat ditemukan.</p>
-        <Link href="/dashboard/my-items" className="px-6 py-2 bg-sky-600 hover:bg-sky-700 rounded-lg text-white font-medium">
+        <h2 className="text-2xl font-semibold text-slate-400 mb-2">
+          Order Tidak Ditemukan
+        </h2>
+        <p className="text-slate-300 mb-6 text-center">
+          Detail untuk order ini tidak dapat ditemukan.
+        </p>
+        <Link
+          href="/dashboard/my-items"
+          className="px-6 py-2 bg-sky-600 hover:bg-sky-700 rounded-lg text-white font-medium"
+        >
           Kembali ke Daftar Order
         </Link>
       </div>
@@ -248,21 +296,33 @@ export default function OrderDetailPage() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 to-slate-800 text-white p-4 sm:p-8">
       <div className="container mx-auto max-w-6xl">
-        <Link href="/dashboard/my-items" className="inline-flex items-center text-sky-400 hover:text-sky-300 mb-6 group">
-          <ArrowLeft size={20} className="mr-2 group-hover:-translate-x-1 transition-transform" />
+        <Link
+          href="/dashboard/my-items"
+          className="inline-flex items-center text-sky-400 hover:text-sky-300 mb-6 group"
+        >
+          <ArrowLeft
+            size={20}
+            className="mr-2 group-hover:-translate-x-1 transition-transform"
+          />
           Kembali ke Daftar Order
         </Link>
 
         {/* Header Section */}
         <div className="bg-slate-800 shadow-2xl rounded-xl overflow-hidden mb-6">
           {order.imagePath && (
-            <div className="w-full h-64 md:h-80 relative">
-              <Image
-                src={`${getApiBaseUrl()}/${order.imagePath.replace(/\\/g, '/')}`}
-                alt={`Order #${order.id}`}
-                layout="fill"
-                objectFit="cover"
-              />
+            <div className="w-full bg-slate-900 flex justify-center items-center overflow-hidden rounded-t-xl">
+              <div className="relative w-full max-h-[400px] aspect-video">
+                <Image
+                  src={`${getApiBaseUrl()}/${order.imagePath.replace(
+                    /\\/g,
+                    "/"
+                  )}`}
+                  alt={`Order #${order.id}`}
+                  fill // Pengganti layout="fill" di Next.js terbaru
+                  className="object-contain" // Gunakan contain agar gambar tidak terpotong dan tidak meluber
+                  priority
+                />
+              </div>
             </div>
           )}
 
@@ -273,12 +333,15 @@ export default function OrderDetailPage() {
                   Order Penitipan #{order.id}
                 </h1>
                 <p className="text-slate-400">
-                  {getTotalItems(order)} barang ({order.entrustedItems.length} jenis)
+                  {getTotalItems(order)} barang ({order.entrustedItems.length}{" "}
+                  jenis)
                 </p>
               </div>
             </div>
 
-            <div className={`inline-flex items-center px-4 py-2 text-base font-semibold rounded-lg border mb-6 ${statusInfo.color}`}>
+            <div
+              className={`inline-flex items-center px-4 py-2 text-base font-semibold rounded-lg border mb-6 ${statusInfo.color}`}
+            >
               {statusInfo.icon}
               <span>{statusInfo.text}</span>
             </div>
@@ -286,50 +349,80 @@ export default function OrderDetailPage() {
             {/* Order Information Grid */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
               <div className="flex items-start">
-                <CalendarDays size={20} className="text-emerald-400 mr-3 mt-1 flex-shrink-0" />
+                <CalendarDays
+                  size={20}
+                  className="text-emerald-400 mr-3 mt-1 flex-shrink-0"
+                />
                 <div>
-                  <h3 className="text-sm text-slate-500 font-medium">Tanggal Penjemputan</h3>
+                  <h3 className="text-sm text-slate-500 font-medium">
+                    Tanggal Penjemputan
+                  </h3>
                   <p className="text-base text-slate-300">
-                    {new Date(order.pickupRequestedDate).toLocaleDateString('id-ID', {
-                      day: 'numeric',
-                      month: 'long',
-                      year: 'numeric',
-                      hour: '2-digit',
-                      minute: '2-digit'
-                    })}
+                    {new Date(order.pickupRequestedDate).toLocaleDateString(
+                      "id-ID",
+                      {
+                        day: "numeric",
+                        month: "long",
+                        year: "numeric",
+                        hour: "2-digit",
+                        minute: "2-digit",
+                      }
+                    )}
                   </p>
                 </div>
               </div>
 
               <div className="flex items-start">
-                <Phone size={20} className="text-orange-400 mr-3 mt-1 flex-shrink-0" />
+                <Phone
+                  size={20}
+                  className="text-orange-400 mr-3 mt-1 flex-shrink-0"
+                />
                 <div>
-                  <h3 className="text-sm text-slate-500 font-medium">Nomor Telepon</h3>
-                  <p className="text-base text-slate-300">{order.contactPhone}</p>
+                  <h3 className="text-sm text-slate-500 font-medium">
+                    Nomor Telepon
+                  </h3>
+                  <p className="text-base text-slate-300">
+                    {order.contactPhone}
+                  </p>
                 </div>
               </div>
 
               <div className="flex items-start">
-                <Clock size={20} className="text-purple-400 mr-3 mt-1 flex-shrink-0" />
+                <Clock
+                  size={20}
+                  className="text-purple-400 mr-3 mt-1 flex-shrink-0"
+                />
                 <div>
-                  <h3 className="text-sm text-slate-500 font-medium">Monitoring</h3>
+                  <h3 className="text-sm text-slate-500 font-medium">
+                    Monitoring
+                  </h3>
                   <p className="text-base text-slate-300">
-                    {order.allowChecks ? getMonitoringFrequencyText(order.monitoringFrequency) : 'Tidak diizinkan'}
+                    {order.allowChecks
+                      ? getMonitoringFrequencyText(order.monitoringFrequency)
+                      : "Tidak diizinkan"}
                   </p>
                 </div>
               </div>
 
               {order.expectedRetrievalDate && (
                 <div className="flex items-start">
-                  <CalendarDays size={20} className="text-sky-400 mr-3 mt-1 flex-shrink-0" />
+                  <CalendarDays
+                    size={20}
+                    className="text-sky-400 mr-3 mt-1 flex-shrink-0"
+                  />
                   <div>
-                    <h3 className="text-sm text-slate-500 font-medium">Perkiraan Pengambilan</h3>
+                    <h3 className="text-sm text-slate-500 font-medium">
+                      Perkiraan Pengambilan
+                    </h3>
                     <p className="text-base text-slate-300">
-                      {new Date(order.expectedRetrievalDate).toLocaleDateString('id-ID', {
-                        day: 'numeric',
-                        month: 'long',
-                        year: 'numeric'
-                      })}
+                      {new Date(order.expectedRetrievalDate).toLocaleDateString(
+                        "id-ID",
+                        {
+                          day: "numeric",
+                          month: "long",
+                          year: "numeric",
+                        }
+                      )}
                     </p>
                   </div>
                 </div>
@@ -337,26 +430,39 @@ export default function OrderDetailPage() {
 
               {/* TAMBAHKAN TOTAL BIAYA DI SINI */}
               <div className="flex items-start">
-                <DollarSign size={20} className="text-yellow-400 mr-3 mt-1 flex-shrink-0" />
+                <DollarSign
+                  size={20}
+                  className="text-yellow-400 mr-3 mt-1 flex-shrink-0"
+                />
                 <div>
-                  <h3 className="text-sm text-slate-500 font-medium">Total Biaya Penitipan</h3>
+                  <h3 className="text-sm text-slate-500 font-medium">
+                    Total Biaya Penitipan
+                  </h3>
                   <p className="text-xl font-bold text-white">
-                    Rp {Number(order.totalPrice || 0).toLocaleString('id-ID')}
+                    Rp {Number(order.totalPrice || 0).toLocaleString("id-ID")}
                   </p>
                 </div>
               </div>
 
               {order.expectedRetrievalDate && (
                 <div className="flex items-start">
-                  <CalendarDays size={20} className="text-sky-400 mr-3 mt-1 flex-shrink-0" />
+                  <CalendarDays
+                    size={20}
+                    className="text-sky-400 mr-3 mt-1 flex-shrink-0"
+                  />
                   <div>
-                    <h3 className="text-sm text-slate-500 font-medium">Perkiraan Pengambilan</h3>
+                    <h3 className="text-sm text-slate-500 font-medium">
+                      Perkiraan Pengambilan
+                    </h3>
                     <p className="text-base text-slate-300">
-                      {new Date(order.expectedRetrievalDate).toLocaleDateString('id-ID', {
-                        day: 'numeric',
-                        month: 'long',
-                        year: 'numeric'
-                      })}
+                      {new Date(order.expectedRetrievalDate).toLocaleDateString(
+                        "id-ID",
+                        {
+                          day: "numeric",
+                          month: "long",
+                          year: "numeric",
+                        }
+                      )}
                     </p>
                   </div>
                 </div>
@@ -365,25 +471,37 @@ export default function OrderDetailPage() {
               {/* Estimasi Nilai Barang (Tetap Ada) */}
               {totalValue > 0 && (
                 <div className="flex items-start">
-                  <Hash size={20} className="text-green-400 mr-3 mt-1 flex-shrink-0" />
+                  <Hash
+                    size={20}
+                    className="text-green-400 mr-3 mt-1 flex-shrink-0"
+                  />
                   <div>
-                    <h3 className="text-sm text-slate-500 font-medium">Total Estimasi Nilai Barang</h3>
-                    <p className="text-base text-slate-300">Rp {totalValue.toLocaleString('id-ID')}</p>
+                    <h3 className="text-sm text-slate-500 font-medium">
+                      Total Estimasi Nilai Barang
+                    </h3>
+                    <p className="text-base text-slate-300">
+                      Rp {totalValue.toLocaleString("id-ID")}
+                    </p>
                   </div>
                 </div>
               )}
 
               <div className="flex items-start">
-                <CalendarDays size={20} className="text-slate-400 mr-3 mt-1 flex-shrink-0" />
+                <CalendarDays
+                  size={20}
+                  className="text-slate-400 mr-3 mt-1 flex-shrink-0"
+                />
                 <div>
-                  <h3 className="text-sm text-slate-500 font-medium">Dibuat Pada</h3>
+                  <h3 className="text-sm text-slate-500 font-medium">
+                    Dibuat Pada
+                  </h3>
                   <p className="text-base text-slate-300">
-                    {new Date(order.createdAt).toLocaleDateString('id-ID', {
-                      day: 'numeric',
-                      month: 'long',
-                      year: 'numeric',
-                      hour: '2-digit',
-                      minute: '2-digit'
+                    {new Date(order.createdAt).toLocaleDateString("id-ID", {
+                      day: "numeric",
+                      month: "long",
+                      year: "numeric",
+                      hour: "2-digit",
+                      minute: "2-digit",
                     })}
                   </p>
                 </div>
@@ -393,10 +511,17 @@ export default function OrderDetailPage() {
             {/* Pickup Address */}
             <div className="mb-8">
               <div className="flex items-start">
-                <MapPin size={20} className="text-emerald-400 mr-3 mt-1 flex-shrink-0" />
+                <MapPin
+                  size={20}
+                  className="text-emerald-400 mr-3 mt-1 flex-shrink-0"
+                />
                 <div>
-                  <h3 className="text-sm text-slate-500 font-medium mb-1">Alamat Penjemputan</h3>
-                  <p className="text-slate-300 leading-relaxed">{order.pickupAddress}</p>
+                  <h3 className="text-sm text-slate-500 font-medium mb-1">
+                    Alamat Penjemputan
+                  </h3>
+                  <p className="text-slate-300 leading-relaxed">
+                    {order.pickupAddress}
+                  </p>
                 </div>
               </div>
             </div>
@@ -412,9 +537,14 @@ export default function OrderDetailPage() {
 
           <div className="space-y-6">
             {order.entrustedItems.map((item, index) => (
-              <div key={item.id} className="bg-slate-700/30 rounded-lg p-6 border border-slate-600">
+              <div
+                key={item.id}
+                className="bg-slate-700/30 rounded-lg p-6 border border-slate-600"
+              >
                 <div className="flex items-start justify-between mb-4">
-                  <h3 className="text-xl font-semibold text-sky-300">{item.name}</h3>
+                  <h3 className="text-xl font-semibold text-sky-300">
+                    {item.name}
+                  </h3>
                   <span className="bg-sky-900/50 text-sky-300 px-3 py-1 rounded-full text-sm font-medium">
                     Qty: {item.quantity}
                   </span>
@@ -422,30 +552,50 @@ export default function OrderDetailPage() {
 
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-4">
                   <div className="flex items-start">
-                    <Tag size={16} className="text-sky-400 mr-2 mt-1 flex-shrink-0" />
+                    <Tag
+                      size={16}
+                      className="text-sky-400 mr-2 mt-1 flex-shrink-0"
+                    />
                     <div>
-                      <h4 className="text-xs text-slate-500 font-medium">Kategori</h4>
-                      <p className="text-sm text-slate-300">{item.category || 'Tidak disebutkan'}</p>
+                      <h4 className="text-xs text-slate-500 font-medium">
+                        Kategori
+                      </h4>
+                      <p className="text-sm text-slate-300">
+                        {item.category || "Tidak disebutkan"}
+                      </p>
                     </div>
                   </div>
 
                   {/* Satu saja field Kondisi */}
                   <div className="flex items-start">
-                    <ShieldCheck size={16} className="text-emerald-400 mr-2 mt-1 flex-shrink-0" />
+                    <ShieldCheck
+                      size={16}
+                      className="text-emerald-400 mr-2 mt-1 flex-shrink-0"
+                    />
                     <div>
-                      <h4 className="text-xs text-slate-500 font-medium">Kondisi</h4>
-                      <p className="text-sm text-slate-300">{item.itemCondition || 'Tidak disebutkan'}</p>
+                      <h4 className="text-xs text-slate-500 font-medium">
+                        Kondisi
+                      </h4>
+                      <p className="text-sm text-slate-300">
+                        {item.itemCondition || "Tidak disebutkan"}
+                      </p>
                     </div>
                   </div>
 
                   {/* Dimensi: Ditampilkan jika ada salah satu nilai */}
-                  {(item.itemLength || item.itemWidth || item.itemHeight) ? (
+                  {item.itemLength || item.itemWidth || item.itemHeight ? (
                     <div className="flex items-start">
-                      <Maximize size={16} className="text-indigo-400 mr-2 mt-1 flex-shrink-0" />
+                      <Maximize
+                        size={16}
+                        className="text-indigo-400 mr-2 mt-1 flex-shrink-0"
+                      />
                       <div>
-                        <h4 className="text-xs text-slate-500 font-medium">Dimensi (P x L x T)</h4>
+                        <h4 className="text-xs text-slate-500 font-medium">
+                          Dimensi (P x L x T)
+                        </h4>
                         <p className="text-sm text-slate-300">
-                          {item.itemLength ?? 0} x {item.itemWidth ?? 0} x {item.itemHeight ?? 0} cm
+                          {item.itemLength ?? 0} x {item.itemWidth ?? 0} x{" "}
+                          {item.itemHeight ?? 0} cm
                         </p>
                       </div>
                     </div>
@@ -454,21 +604,36 @@ export default function OrderDetailPage() {
                   {/* Berat */}
                   {item.itemWeight != null && (
                     <div className="flex items-start">
-                      <Weight size={16} className="text-teal-400 mr-2 mt-1 flex-shrink-0" />
+                      <Weight
+                        size={16}
+                        className="text-teal-400 mr-2 mt-1 flex-shrink-0"
+                      />
                       <div>
-                        <h4 className="text-xs text-slate-500 font-medium">Berat</h4>
-                        <p className="text-sm text-slate-300">{item.itemWeight} kg</p>
+                        <h4 className="text-xs text-slate-500 font-medium">
+                          Berat
+                        </h4>
+                        <p className="text-sm text-slate-300">
+                          {item.itemWeight} kg
+                        </p>
                       </div>
                     </div>
                   )}
 
                   {item.estimatedValue && (
                     <div className="flex items-start">
-                      <DollarSign size={16} className="text-green-400 mr-2 mt-1 flex-shrink-0" />
+                      <DollarSign
+                        size={16}
+                        className="text-green-400 mr-2 mt-1 flex-shrink-0"
+                      />
                       <div>
-                        <h4 className="text-xs text-slate-500 font-medium">Estimasi Nilai</h4>
+                        <h4 className="text-xs text-slate-500 font-medium">
+                          Estimasi Nilai
+                        </h4>
                         <p className="text-sm text-slate-300">
-                          Rp {parseFloat(item.estimatedValue).toLocaleString('id-ID')}
+                          Rp{" "}
+                          {parseFloat(item.estimatedValue).toLocaleString(
+                            "id-ID"
+                          )}
                         </p>
                       </div>
                     </div>
@@ -476,9 +641,14 @@ export default function OrderDetailPage() {
 
                   {item.brand && (
                     <div className="flex items-start">
-                      <Tag size={16} className="text-purple-400 mr-2 mt-1 flex-shrink-0" />
+                      <Tag
+                        size={16}
+                        className="text-purple-400 mr-2 mt-1 flex-shrink-0"
+                      />
                       <div>
-                        <h4 className="text-xs text-slate-500 font-medium">Merek</h4>
+                        <h4 className="text-xs text-slate-500 font-medium">
+                          Merek
+                        </h4>
                         <p className="text-sm text-slate-300">{item.brand}</p>
                       </div>
                     </div>
@@ -486,9 +656,14 @@ export default function OrderDetailPage() {
 
                   {item.model && (
                     <div className="flex items-start">
-                      <Settings size={16} className="text-orange-400 mr-2 mt-1 flex-shrink-0" />
+                      <Settings
+                        size={16}
+                        className="text-orange-400 mr-2 mt-1 flex-shrink-0"
+                      />
                       <div>
-                        <h4 className="text-xs text-slate-500 font-medium">Model</h4>
+                        <h4 className="text-xs text-slate-500 font-medium">
+                          Model
+                        </h4>
                         <p className="text-sm text-slate-300">{item.model}</p>
                       </div>
                     </div>
@@ -496,9 +671,14 @@ export default function OrderDetailPage() {
 
                   {item.color && (
                     <div className="flex items-start">
-                      <Palette size={16} className="text-pink-400 mr-2 mt-1 flex-shrink-0" />
+                      <Palette
+                        size={16}
+                        className="text-pink-400 mr-2 mt-1 flex-shrink-0"
+                      />
                       <div>
-                        <h4 className="text-xs text-slate-500 font-medium">Warna</h4>
+                        <h4 className="text-xs text-slate-500 font-medium">
+                          Warna
+                        </h4>
                         <p className="text-sm text-slate-300">{item.color}</p>
                       </div>
                     </div>
@@ -508,10 +688,17 @@ export default function OrderDetailPage() {
                 {item.description && (
                   <div className="mb-4">
                     <div className="flex items-start">
-                      <FileText size={16} className="text-sky-400 mr-2 mt-1 flex-shrink-0" />
+                      <FileText
+                        size={16}
+                        className="text-sky-400 mr-2 mt-1 flex-shrink-0"
+                      />
                       <div>
-                        <h4 className="text-xs text-slate-500 font-medium mb-1">Deskripsi</h4>
-                        <p className="text-sm text-slate-300 leading-relaxed">{item.description}</p>
+                        <h4 className="text-xs text-slate-500 font-medium mb-1">
+                          Deskripsi
+                        </h4>
+                        <p className="text-sm text-slate-300 leading-relaxed">
+                          {item.description}
+                        </p>
                       </div>
                     </div>
                   </div>
@@ -520,10 +707,17 @@ export default function OrderDetailPage() {
                 {item.specialInstructions && (
                   <div>
                     <div className="flex items-start">
-                      <AlertTriangle size={16} className="text-yellow-400 mr-2 mt-1 flex-shrink-0" />
+                      <AlertTriangle
+                        size={16}
+                        className="text-yellow-400 mr-2 mt-1 flex-shrink-0"
+                      />
                       <div>
-                        <h4 className="text-xs text-slate-500 font-medium mb-1">Instruksi Khusus</h4>
-                        <p className="text-sm text-slate-300 leading-relaxed">{item.specialInstructions}</p>
+                        <h4 className="text-xs text-slate-500 font-medium mb-1">
+                          Instruksi Khusus
+                        </h4>
+                        <p className="text-sm text-slate-300 leading-relaxed">
+                          {item.specialInstructions}
+                        </p>
                       </div>
                     </div>
                   </div>
@@ -534,7 +728,7 @@ export default function OrderDetailPage() {
         </div>
 
         {/* Monitoring Section - can be expanded later */}
-        {order.allowChecks && order.status === 'STORED' && (
+        {order.allowChecks && order.status === "STORED" && (
           <div className="bg-slate-800 shadow-2xl rounded-xl p-6 md:p-8 mt-6">
             <h2 className="text-2xl font-bold text-purple-400 mb-6 flex items-center">
               <Clock size={24} className="mr-3" />
@@ -542,9 +736,12 @@ export default function OrderDetailPage() {
             </h2>
             <div className="text-center py-8">
               <Clock size={48} className="mx-auto text-slate-500 mb-4" />
-              <p className="text-slate-400">Fitur monitoring akan segera tersedia.</p>
+              <p className="text-slate-400">
+                Fitur monitoring akan segera tersedia.
+              </p>
               <p className="text-slate-500 text-sm mt-1">
-                Frekuensi monitoring: {getMonitoringFrequencyText(order.monitoringFrequency)}
+                Frekuensi monitoring:{" "}
+                {getMonitoringFrequencyText(order.monitoringFrequency)}
               </p>
             </div>
           </div>
