@@ -3,6 +3,7 @@
 
 import React, { useEffect, useRef } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { usePathname, useRouter } from "next/navigation";
 import {
   LayoutDashboard,
@@ -14,8 +15,10 @@ import {
   Shield,
   Users,
   FileCog,
+  Images,
 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
+import navLogo from "@/../public/assets/images/navlogo.svg";
 
 interface SidebarProps {
   isOpen?: boolean;
@@ -134,17 +137,18 @@ const Sidebar = ({ isOpen = false, onToggle }: SidebarProps) => {
         `}
         aria-label="Sidebar"
       >
-        <div className="flex h-full flex-col overflow-y-auto px-3 py-4 md:py-6">
-          <div className="flex items-center justify-between mb-8">
+        <div className="flex h-full flex-col overflow-y-auto px-3 pt-24 pb-4 md:py-6">
+          <div className="flex px-3 py-4 border-b border-slate-700 md:block hidden">
             <Link
               href="/dashboard"
               className="flex items-center"
               onClick={handleLinkClick}
             >
-              <Shield size={28} className="text-sky-400 mr-2" />
-              <span className="text-2xl font-bold text-sky-400 whitespace-nowrap">
-                Keepify
-              </span>
+              <Image
+                src={navLogo}
+                alt="Logo"
+                className="w-24 h-auto"
+              />
             </Link>
             <button
               onClick={onToggle}
@@ -165,10 +169,9 @@ const Sidebar = ({ isOpen = false, onToggle }: SidebarProps) => {
                   onClick={handleLinkClick}
                   className={`
                     group flex items-center rounded-lg p-3 text-base font-normal transition-all duration-200
-                    ${
-                      active
-                        ? "bg-sky-600 text-white shadow-md"
-                        : "text-slate-300 hover:bg-slate-700 hover:text-sky-300"
+                    ${active
+                      ? "bg-sky-600 text-white shadow-md"
+                      : "text-slate-300 hover:bg-slate-700 hover:text-sky-300"
                     }
                   `}
                 >
@@ -176,10 +179,9 @@ const Sidebar = ({ isOpen = false, onToggle }: SidebarProps) => {
                     size={22}
                     className={`
                       transition-all duration-200 group-hover:scale-110
-                      ${
-                        active
-                          ? "text-white"
-                          : "text-slate-400 group-hover:text-sky-300"
+                      ${active
+                        ? "text-white"
+                        : "text-slate-400 group-hover:text-sky-300"
                       }
                     `}
                   />

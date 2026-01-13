@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import * as nodemailer from 'nodemailer';
+import nodemailer from 'nodemailer';
 
 @Injectable()
 export class MailService {
@@ -22,7 +22,7 @@ export class MailService {
       host: host,
       port: port,
       ignoreTLS: false,
-      secure: isSecure, 
+      secure: isSecure,
       auth: {
         user: user,
         pass: this.configService.get<string>('MAIL_PASSWORD'),
@@ -33,7 +33,7 @@ export class MailService {
 
   async sendOtp(email: string, otp: string) {
     const from = this.configService.get<string>('MAIL_FROM') || '"No Reply" <noreply@example.com>';
-    
+
     try {
       await this.transporter.sendMail({
         from,

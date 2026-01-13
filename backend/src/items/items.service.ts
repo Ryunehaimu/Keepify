@@ -43,8 +43,8 @@ export class ItemsService {
           ownerId: userId,
           allowChecks: createEntrustmentOrderDto.allowChecks,
           monitoringFrequency: createEntrustmentOrderDto.monitoringFrequency as MonitoringFrequency,
-          pickupRequestedDate: createEntrustmentOrderDto.isPickupRequired && createEntrustmentOrderDto.pickupRequestedDate 
-            ? new Date(createEntrustmentOrderDto.pickupRequestedDate) 
+          pickupRequestedDate: createEntrustmentOrderDto.isPickupRequired && createEntrustmentOrderDto.pickupRequestedDate
+            ? new Date(createEntrustmentOrderDto.pickupRequestedDate)
             : undefined,
           pickupAddress: createEntrustmentOrderDto.pickupAddress || undefined,
           contactPhone: createEntrustmentOrderDto.contactPhone,
@@ -71,8 +71,8 @@ export class ItemsService {
           const finalWeight = Math.max(weight, volumeWeight);
 
           // --- LOGIKA DURASI (HARI) ---
-          const startDate = createEntrustmentOrderDto.pickupRequestedDate 
-            ? new Date(createEntrustmentOrderDto.pickupRequestedDate) 
+          const startDate = createEntrustmentOrderDto.pickupRequestedDate
+            ? new Date(createEntrustmentOrderDto.pickupRequestedDate)
             : new Date(); // Fallback to NOW if no pickup date provided
           const endDate = createEntrustmentOrderDto.expectedRetrievalDate
             ? new Date(createEntrustmentOrderDto.expectedRetrievalDate)
@@ -112,14 +112,14 @@ export class ItemsService {
 
         // --- TAMBAH BIAYA PICKUP (JIKA ADA) ---
         if (createEntrustmentOrderDto.isPickupRequired && createEntrustmentOrderDto.pickupDistance) {
-            const dist = createEntrustmentOrderDto.pickupDistance;
-            // Free for first 1km, then 2500 per km
-            const pickupFee = dist <= 1 ? 0 : (dist * 2500);
-            
-            totalCalculatedPrice += pickupFee;
-            console.log(`[PRICING] Added Pickup Fee: ${pickupFee} (Dist: ${dist}km)`);
+          const dist = createEntrustmentOrderDto.pickupDistance;
+          // Free for first 1km, then 2500 per km
+          const pickupFee = dist <= 1 ? 0 : (dist * 2500);
+
+          totalCalculatedPrice += pickupFee;
+          console.log(`[PRICING] Added Pickup Fee: ${pickupFee} (Dist: ${dist}km)`);
         } else {
-             console.log(`[PRICING] No Pickup Fee (IsRequired: ${createEntrustmentOrderDto.isPickupRequired}, Dist: ${createEntrustmentOrderDto.pickupDistance})`);
+          console.log(`[PRICING] No Pickup Fee (IsRequired: ${createEntrustmentOrderDto.isPickupRequired}, Dist: ${createEntrustmentOrderDto.pickupDistance})`);
         }
 
         // Update total harga pada order utama

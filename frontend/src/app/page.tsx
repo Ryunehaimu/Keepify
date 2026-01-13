@@ -6,9 +6,11 @@ import warehouseImage from "@/../public/assets/images/hero.webp";
 import deliveryImage from "@/../public/assets/images/delivery.webp";
 import placementImage from "@/../public/assets/images/penataan.webp";
 import teamImage from "@/../public/assets/images/team.webp";
+import navLogo from "@/../public/assets/images/navlogo.svg";
 import React, { useState } from "react";
 import { UserPlus, FileText, Truck } from "lucide-react";
 import { ShieldCheck, Smartphone, Edit3 } from "lucide-react"; // Contoh ikon dari lucide-react [cite: 42]
+import ScrollAnimationWrapper from "@/components/ScrollAnimationWrapper";
 
 export default function LandingPage() {
   const [activeStep, setActiveStep] = useState(0);
@@ -114,9 +116,16 @@ export default function LandingPage() {
 "
       >
         <nav className="container mx-auto flex justify-between items-center p-4 sm:p-6">
-          <h1 className="text-2xl sm:text-3xl font-bold text-sky-400">
-            Keepify
-          </h1>
+          <div className="flex">
+            <Image
+              src={navLogo}
+              alt="nav logo"
+              width={100}
+              height={100}
+              className=""
+            />
+
+          </div>
           <div className="space-x-2 sm:space-x-4">
             <Link
               href="/login"
@@ -147,7 +156,8 @@ export default function LandingPage() {
         <div className="absolute top-[60%] left-1/2 -translate-x-1/2 w-full md:w-[900px] h-[350px] bg-sky-500/20 blur-[140px]" />
 
         {/* CONTENT */}
-        <div className="relative z-10 max-w-5xl mx-auto">
+        {/* CONTENT */}
+        <ScrollAnimationWrapper className="relative z-10 max-w-5xl mx-auto" preset="fade-up">
           <p className="text-sm text-slate-400 mb-4">
             Secure • Digital • Always Monitored
           </p>
@@ -171,7 +181,7 @@ export default function LandingPage() {
               Mulai Sekarang
             </Link>
           </div>
-        </div>
+        </ScrollAnimationWrapper>
       </section>
 
       {/* About */}
@@ -179,7 +189,7 @@ export default function LandingPage() {
         <div className="container mx-auto p-4 sm:p-6">
           <div className="grid lg:grid-cols-1 gap-12 items-center">
             {/* Left Content */}
-            <div className="max-w-[900px]">
+            <ScrollAnimationWrapper className="max-w-[900px]" preset="fade-right">
               <div className="flex items-center mb-6">
                 <div className="w-2 h-2 bg-sky-400 rounded-full mr-3"></div>
                 <span className="text-sky-400 text-sm font-medium">
@@ -192,10 +202,10 @@ export default function LandingPage() {
                 kebutuhan penyimpanan modern, dilengkapi pemantauan visual dan
                 respons adaptif yang dipersonalisasi dengan kepercayaan tinggi.
               </h2>
-            </div>
+            </ScrollAnimationWrapper>
 
             {/* Right Content */}
-            <div className="flex items-end text-right justify-end flex-col ">
+            <ScrollAnimationWrapper className="flex items-end text-right justify-end flex-col" preset="fade-left" delay={0.2}>
               <div className="mb-8">
                 <p className="text-gray-300 text-lg leading-relaxed max-w-[500px]">
                   Keepify menawarkan pengalaman penitipan barang berharga yang
@@ -212,7 +222,7 @@ export default function LandingPage() {
                   Mulai Titipkan Barang
                 </Link>
               </div>
-            </div>
+            </ScrollAnimationWrapper>
           </div>
         </div>
       </section>
@@ -239,9 +249,11 @@ export default function LandingPage() {
 
           {/* Gallery Grid - Featured Work Style */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {facilities.map((item) => (
-              <div
+            {facilities.map((item, index) => (
+              <ScrollAnimationWrapper
                 key={item.id}
+                preset="fade-up"
+                delay={index * 0.1}
                 className="relative group overflow-hidden rounded-2xl aspect-[4/3]"
               >
                 {/* Gradient hover */}
@@ -280,7 +292,7 @@ export default function LandingPage() {
 
                   <p className="text-gray-300 text-sm">{item.description}</p>
                 </div>
-              </div>
+              </ScrollAnimationWrapper>
             ))}
           </div>
         </div>
@@ -306,7 +318,7 @@ export default function LandingPage() {
           {/* Features Grid */}
           <div className="grid md:grid-cols-3 gap-8 mt-20">
             {/* Feature 1 */}
-            <div className="text-center">
+            <ScrollAnimationWrapper className="text-center" preset="fade-up" delay={0.1}>
               <div className="flex justify-center mb-6">
                 <div className="w-16 h-16 bg-sky-400/10 rounded-xl flex items-center justify-center border border-sky-400/20">
                   <ShieldCheck size={32} className="text-sky-400" />
@@ -319,10 +331,10 @@ export default function LandingPage() {
                 Barang Anda disimpan dengan aman dan dilengkapi dengan sistem
                 checklist saat pengambilan dan pengembalian.
               </p>
-            </div>
+            </ScrollAnimationWrapper>
 
             {/* Feature 2 */}
-            <div className="text-center">
+            <ScrollAnimationWrapper className="text-center" preset="fade-up" delay={0.2}>
               <div className="flex justify-center mb-6">
                 <div className="w-16 h-16 bg-sky-400/10 rounded-xl flex items-center justify-center border border-sky-400/20">
                   <Smartphone size={32} className="text-sky-400" />
@@ -335,10 +347,10 @@ export default function LandingPage() {
                 Pantau kondisi barang Anda secara berkala dengan laporan foto
                 langsung dari aplikasi.
               </p>
-            </div>
+            </ScrollAnimationWrapper>
 
             {/* Feature 3 */}
-            <div className="text-center">
+            <ScrollAnimationWrapper className="text-center" preset="fade-up" delay={0.3}>
               <div className="flex justify-center mb-6">
                 <div className="w-16 h-16 bg-sky-400/10 rounded-xl flex items-center justify-center border border-sky-400/20">
                   <Edit3 size={32} className="text-sky-400" />
@@ -351,7 +363,7 @@ export default function LandingPage() {
                 Mulai dari formulir penitipan hingga tanda tangan perjanjian,
                 semua dilakukan secara digital.
               </p>
-            </div>
+            </ScrollAnimationWrapper>
           </div>
         </div>
       </section>
@@ -375,7 +387,7 @@ export default function LandingPage() {
           {/* Stackable Tabs */}
           <div className="grid lg:grid-cols-2 gap-12 items-start">
             {/* Left: Step Selector */}
-            <div className="space-y-4">
+            <ScrollAnimationWrapper className="space-y-4" preset="fade-right">
               {steps.map((step, index) => {
                 const Icon = step.icon;
                 const isActive = activeStep === index;
@@ -384,20 +396,18 @@ export default function LandingPage() {
                   <button
                     key={step.id}
                     onClick={() => setActiveStep(index)}
-                    className={`w-full text-left p-6 rounded-2xl border transition-all duration-300 ${
-                      isActive
-                        ? "bg-sky-400/10 border-sky-400/50 shadow-lg shadow-sky-400/20"
-                        : "bg-gray-800/30 border-gray-700/50 hover:border-gray-600/50"
-                    }`}
+                    className={`w-full text-left p-6 rounded-2xl border transition-all duration-300 ${isActive
+                      ? "bg-sky-400/10 border-sky-400/50 shadow-lg shadow-sky-400/20"
+                      : "bg-gray-800/30 border-gray-700/50 hover:border-gray-600/50"
+                      }`}
                   >
                     <div className="flex items-start gap-4">
                       {/* Step Number & Icon */}
                       <div
-                        className={`flex-shrink-0 w-14 h-14 rounded-xl flex items-center justify-center transition-all duration-300 ${
-                          isActive
-                            ? "bg-sky-400/20 border-2 border-sky-400"
-                            : "bg-gray-700/50 border-2 border-gray-600"
-                        }`}
+                        className={`flex-shrink-0 w-14 h-14 rounded-xl flex items-center justify-center transition-all duration-300 ${isActive
+                          ? "bg-sky-400/20 border-2 border-sky-400"
+                          : "bg-gray-700/50 border-2 border-gray-600"
+                          }`}
                       >
                         <Icon
                           size={24}
@@ -411,24 +421,21 @@ export default function LandingPage() {
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2 mb-1">
                           <span
-                            className={`text-xs font-medium ${
-                              isActive ? "text-sky-400" : "text-gray-500"
-                            }`}
+                            className={`text-xs font-medium ${isActive ? "text-sky-400" : "text-gray-500"
+                              }`}
                           >
                             Langkah {index + 1}
                           </span>
                         </div>
                         <h3
-                          className={`text-xl font-semibold mb-1 transition-colors ${
-                            isActive ? "text-white" : "text-gray-300"
-                          }`}
+                          className={`text-xl font-semibold mb-1 transition-colors ${isActive ? "text-white" : "text-gray-300"
+                            }`}
                         >
                           {step.title}
                         </h3>
                         <p
-                          className={`text-sm transition-colors ${
-                            isActive ? "text-gray-300" : "text-gray-500"
-                          }`}
+                          className={`text-sm transition-colors ${isActive ? "text-gray-300" : "text-gray-500"
+                            }`}
                         >
                           {step.description}
                         </p>
@@ -437,10 +444,10 @@ export default function LandingPage() {
                   </button>
                 );
               })}
-            </div>
+            </ScrollAnimationWrapper>
 
             {/* Right: Step Content */}
-            <div className="lg:sticky lg:top-8">
+            <ScrollAnimationWrapper className="lg:sticky lg:top-8" preset="fade-left">
               <div className="bg-gradient-to-br from-gray-800/50 to-gray-900/50 rounded-2xl p-8 border border-gray-700/50 backdrop-blur-sm">
                 {/* Step Indicator */}
                 <div className="flex items-center gap-2 mb-6">
@@ -474,7 +481,7 @@ export default function LandingPage() {
                   ))}
                 </div>
               </div>
-            </div>
+            </ScrollAnimationWrapper>
           </div>
         </div>
       </section>
@@ -498,7 +505,7 @@ export default function LandingPage() {
             <div className="absolute inset-0 bg-slate-900/50 z-10"></div>
 
             {/* Content */}
-            <div className="relative z-20 py-20 sm:py-32 px-4">
+            <ScrollAnimationWrapper className="relative z-20 py-20 sm:py-32 px-4" preset="zoom-in">
               <h3 className="text-3xl sm:text-4xl font-bold mb-6">
                 Terhubung dengan Keepify
               </h3>
@@ -558,7 +565,7 @@ export default function LandingPage() {
                   />
                 </a>
               </div>
-            </div>
+            </ScrollAnimationWrapper>
           </div>
         </div>
       </section>
