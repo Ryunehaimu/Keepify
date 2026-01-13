@@ -176,10 +176,6 @@ class ApiClient {
     return response.data;
   }
 
-  async getAllOrders(): Promise<EntrustmentOrder[]> {
-    const response = await this.api.get('/admin/orders');
-    return response.data;
-  }
 
   async adminUpdateStatus(orderId: number, body: { status: string }): Promise<EntrustmentOrder> {
     const response = await this.api.post(`/admin/orders/${orderId}/update-status`, body);
